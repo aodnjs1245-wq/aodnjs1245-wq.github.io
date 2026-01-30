@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>서환산업 | 공지 관리</title>
+
+  <!-- 공통/페이지 스타일 -->
+  <link rel="stylesheet" href="/css/01_common.css">
+  <link rel="stylesheet" href="/css/02_pages.css">
+  <link rel="stylesheet" href="/css/03_admin.css">
+</head>
+<body>
+
+<main class="admin-wrap">
+  <section class="admin-card">
+    <div class="admin-card__head">
+      <h1 class="admin-card__title">공지사항 관리</h1>
+      <p class="admin-card__desc">공지 수정/삭제는 관리자만 가능합니다.</p>
+    </div>
+
+    <div class="admin-card__body">
+
+      <!-- 상단 버튼 -->
+      <div class="admin-actions" style="justify-content:flex-end;">
+        <a class="admin-btn admin-btn--ghost" href="/06_admin/03_admin_home.html">관리자 홈</a>
+        <a class="admin-btn admin-btn--primary" href="/06_admin/02_notice_write.html">새 공지 작성</a>
+      </div>
+
+      <!-- 편집 폼(숨김/표시) -->
+      <div class="admin-panel" id="editPanel" style="display:none; margin-top:14px;">
+        <h2 class="admin-panel__title">공지 수정</h2>
+
+        <form id="editForm" style="margin-top:12px;">
+          <input type="hidden" id="editId">
+
+          <div class="admin-field">
+            <label class="admin-label" for="editTitle">제목</label>
+            <input class="admin-input" id="editTitle" type="text">
+          </div>
+
+          <div class="admin-field">
+            <label class="admin-label" for="editContent">내용</label>
+            <textarea class="admin-textarea" id="editContent"></textarea>
+          </div>
+
+          <div class="admin-actions" style="justify-content:flex-end;">
+            <button class="admin-btn admin-btn--ghost" type="button" id="btnCancelEdit">취소</button>
+            <button class="admin-btn admin-btn--primary" type="submit">수정 저장</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- 목록 -->
+      <div class="admin-panel" style="margin-top:14px;">
+        <h2 class="admin-panel__title">공지 목록</h2>
+        <p class="admin-panel__text">삭제/수정 후 일반 공지 페이지에 자동 반영됩니다.</p>
+
+        <div id="noticeAdminList" style="margin-top:12px;"></div>
+      </div>
+
+      <p class="admin-note">
+        삭제는 되돌릴 수 없습니다.
+      </p>
+    </div>
+  </section>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/js/01_supabase.js"></script>
+
+<script>
+/* =========================
+   유틸
+========================= */
+function formatDate(iso){
+  const d = new Date(iso);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+/* =========================
+   로그인 체크
+========================= */
+async function requireAdmin(){
+  const { data: { session } } = await window.supabaseClient.auth.getSession();
+  if (!session){
+    location.href = "/06_admin/01_admin_login.html";
+    return false;
+  }
+  return true;
+}
+
+/* =========================
+   목록 로드/렌더
+========================= */
+async function loadAdminNotices(){
+  const wrap = document.getElementById("noticeAdminList");
+
+  const { data, error } = await window.supabaseClient
+    .from("notices")
+    .select("id, title, created_at, content")
+    .order("id", { ascending: false });
+
+  if (error){
+    console.error(error);
+    wrap.innerHTML = `<div class="admin-panel__text">목록을 불러오지 못했습니다.</div>`;
+    return;
+  }
+
+  if (!data || data.length === 0){
+    wrap.innerHTML = `<div class="admin-panel__text">등록된 공지사항이 없습니다.</div>`;
+    return;
+  }
+
+  wrap.innerHTML = data.map(row => `
+    <div style="display:flex; gap:10px; align-items:flex-start; padding:12px 0; border-bottom:1px solid #e5e7eb;">
+      <div style="flex:1 1 auto;">
+        <div style="font-weight:800; color:#374151; margin-bottom:6px;">
+          ${row.title}
+        </div>
+        <div style="font-size:12px; color:#6b7280;">
+          작성일: ${formatDate(row.created_at)} · ID: ${row.id}
+        </div>
+        <div style="margin-top:8px; font-size:13px; color:#6b7280; line-height:1.6;">
+          ${String(row.content || "").slice(0, 120).replaceAll("\n","<br>")}${String(row.content || "").length > 120 ? "..." : ""}
+        </div>
+      </div>
+
+      <div style="display:flex; gap:8px; flex:0 0 auto;">
+        <a class="admin-btn admin-btn--ghost" href="/05_notice/05_notice_view.html?id=${row.id}" target="_blank" rel="noopener">보기</a>
+        <button class="admin-btn admin-btn--ghost" data-action="edit" data-id="${row.id}">수정</button>
+        <button class="admin-btn admin-btn--danger" data-action="delete" data-id="${row.id}">삭제</button>
+      </div>
+    </div>
+  `).join("");
+}
+
+/* =========================
+   수정 UI
+========================= */
+function openEdit(row){
+  document.getElementById("editPanel").style.display = "block";
+  document.getElementById("editId").value = row.id;
+  document.getElementById("editTitle").value = row.title || "";
+  document.getElementById("editContent").value = row.content || "";
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function closeEdit(){
+  document.getElementById("editPanel").style.display = "none";
+  document.getElementById("editId").value = "";
+  document.getElementById("editTitle").value = "";
+  document.getElementById("editContent").value = "";
+}
+
+/* =========================
+   이벤트
+========================= */
+document.addEventListener("DOMContentLoaded", async () => {
+  const ok = await requireAdmin();
+  if (!ok) return;
+
+  await loadAdminNotices();
+
+  document.getElementById("btnCancelEdit").addEventListener("click", () => {
+    closeEdit();
+  });
+
+  document.getElementById("editForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const id = Number(document.getElementById("editId").value);
+    const title = document.getElementById("editTitle").value.trim();
+    const content = document.getElementById("editContent").value.trim();
+
+    if (!id || !title || !content){
+      alert("제목/내용을 입력해주세요.");
+      return;
+    }
+
+    const { error } = await window.supabaseClient
+      .from("notices")
+      .update({ title, content })
+      .eq("id", id);
+
+    if (error){
+      alert("수정 실패: " + error.message);
+      console.error(error);
+      return;
+    }
+
+    alert("수정 완료");
+    closeEdit();
+    await loadAdminNotices();
+  });
+
+  document.getElementById("noticeAdminList").addEventListener("click", async (e) => {
+    const btn = e.target.closest("button[data-action]");
+    if (!btn) return;
+
+    const action = btn.dataset.action;
+    const id = Number(btn.dataset.id);
+
+    if (action === "delete"){
+      const yes = confirm("정말 삭제할까요? 삭제하면 되돌릴 수 없습니다.");
+      if (!yes) return;
+
+      const { error } = await window.supabaseClient
+        .from("notices")
+        .delete()
+        .eq("id", id);
+
+      if (error){
+        alert("삭제 실패: " + error.message);
+        console.error(error);
+        return;
+      }
+
+      alert("삭제 완료");
+      closeEdit();
+      await loadAdminNotices();
+      return;
+    }
+
+    if (action === "edit"){
+      /* 편집용 데이터 1건 로드 */
+      const { data, error } = await window.supabaseClient
+        .from("notices")
+        .select("id, title, content")
+        .eq("id", id)
+        .single();
+
+      if (error || !data){
+        alert("수정 데이터를 불러오지 못했습니다.");
+        console.error(error);
+        return;
+      }
+
+      openEdit(data);
+    }
+  });
+});
+</script>
+
+</body>
+</html>
