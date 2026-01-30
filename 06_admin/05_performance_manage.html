@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>서환산업 | 전체 사업실적 관리</title>
+
+    <!-- 공통/페이지 스타일 -->
+    <link rel="stylesheet" href="/css/01_common.css">
+    <link rel="stylesheet" href="/css/02_pages.css">
+    <link rel="stylesheet" href="/css/03_admin.css">
+</head>
+
+<body>
+
+    <main class="admin-wrap">
+        <section class="admin-card">
+
+            <div class="admin-card__head">
+                <h1 class="admin-card__title">전체 사업실적 관리</h1>
+                <p class="admin-card__desc">실적 추가/수정/삭제는 관리자만 가능합니다.</p>
+            </div>
+
+            <div class="admin-card__body">
+
+                <!-- 상단 버튼 -->
+                <div class="admin-actions" style="justify-content:flex-end;">
+                    <a class="admin-btn admin-btn--ghost" href="/06_admin/03_admin_home.html">관리자 홈</a>
+                    <button class="admin-btn admin-btn--danger" id="adminLogoutBtn" type="button">로그아웃</button>
+                </div>
+
+                <!-- 입력 폼(추가/수정 겸용) -->
+                <div class="admin-panel" style="margin-top:14px;">
+                    <h2 class="admin-panel__title">실적 입력</h2>
+
+                    <form id="perfForm" style="margin-top:12px;">
+                        <input type="hidden" id="perfId">
+
+                        <div class="admin-field">
+                            <label class="admin-label" for="workDate">공사일자</label>
+                            <input class="admin-input" id="workDate" type="text" placeholder="예) 2024.08">
+                        </div>
+
+                        <div class="admin-field">
+                            <label class="admin-label" for="workTitle">공사명</label>
+                            <input class="admin-input" id="workTitle" type="text" placeholder="공사명을 입력하세요">
+                        </div>
+
+                        <div class="admin-field">
+                            <label class="admin-label" for="client">발주처</label>
+                            <input class="admin-input" id="client" type="text" placeholder="발주처를 입력하세요">
+                        </div>
+
+                        <div class="admin-actions" style="justify-content:flex-end;">
+                            <button class="admin-btn admin-btn--ghost" type="button" id="btnReset">초기화</button>
+                            <button class="admin-btn admin-btn--primary" type="submit">저장</button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- 목록 -->
+                <div class="admin-panel" style="margin-top:14px;">
+                    <h2 class="admin-panel__title">실적 목록</h2>
+                    <p class="admin-panel__text">행의 “수정”을 누르면 위 입력폼에 값이 채워집니다.</p>
+
+                    <div style="overflow:auto; margin-top:12px;">
+                        <table style="width:100%; border-collapse:collapse; min-width:760px;">
+                            <thead>
+                                <tr style="background:#1f2a44; color:#fff;">
+                                    <th style="padding:12px; text-align:center;">공사일자</th>
+                                    <th style="padding:12px; text-align:left;">공사명</th>
+                                    <th style="padding:12px; text-align:center;">발주처</th>
+                                    <th style="padding:12px; text-align:center; width:160px;">관리</th>
+                                </tr>
+                            </thead>
+                            <tbody id="perfList"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <p class="admin-note">
+                    삭제는 되돌릴 수 없습니다.
+                </p>
+
+            </div>
+        </section>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="/js/01_supabase.js"></script>
+
+    <script>
+        /* =========================
+           로그인 체크
+        ========================= */
+        async function requireAdmin() {
+            const { data: { session } } = await window.supabaseClient.auth.getSession();
+            if (!session) {
+                location.href = "/06_admin/01_admin_login.html";
+                return false;
+            }
+            return true;
+        }
+
+        /* =========================
+           XSS 방지(최소)
+        ========================= */
+        function escapeHtml(str) {
+            return String(str ?? "")
+                .replaceAll("&", "&amp;")
+                .replaceAll("<", "&lt;")
+                .replaceAll(">", "&gt;")
+                .replaceAll('"', "&quot;")
+                .replaceAll("'", "&#039;");
+        }
+
+        /* =========================
+           목록 로드
+        ========================= */
+        async function loadPerformances() {
+            const tbody = document.getElementById("perfList");
+
+            const { data, error } = await window.supabaseClient
+                .from("performance_all")
+                .select("id, work_date, work_title, client")
+                .order("work_date", { ascending: false })
+                .order("id", { ascending: false });
+
+            if (error) {
+                console.error(error);
+                tbody.innerHTML = `<tr><td colspan="4" style="padding:12px; text-align:center;">목록을 불러오지 못했습니다.</td></tr>`;
+                return;
+            }
+
+            if (!data || data.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" style="padding:12px; text-align:center;">등록된 실적이 없습니다.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = data.map(row => `
+    <tr data-id="${row.id}" style="border-bottom:1px solid #e5e7eb;">
+      <td style="padding:12px; text-align:center;">${escapeHtml(row.work_date)}</td>
+      <td style="padding:12px; text-align:left;">${escapeHtml(row.work_title)}</td>
+      <td style="padding:12px; text-align:center;">${escapeHtml(row.client)}</td>
+      <td style="padding:12px; text-align:center;">
+        <button class="admin-btn admin-btn--ghost btnEdit" type="button" style="padding:8px 10px;">수정</button>
+        <button class="admin-btn admin-btn--danger btnDel" type="button" style="padding:8px 10px;">삭제</button>
+      </td>
+    </tr>
+  `).join("");
+        }
+
+        /* =========================
+           저장(추가/수정)
+        ========================= */
+        async function savePerformance(e) {
+            e.preventDefault();
+
+            const id = document.getElementById("perfId").value.trim();
+            const work_date = document.getElementById("workDate").value.trim();
+            const work_title = document.getElementById("workTitle").value.trim();
+            const client = document.getElementById("client").value.trim();
+
+            if (!work_date || !work_title || !client) {
+                alert("공사일자/공사명/발주처를 모두 입력해주세요.");
+                return;
+            }
+
+            const payload = { work_date, work_title, client };
+
+            let res;
+            if (id) {
+                res = await window.supabaseClient
+                    .from("performance_all")
+                    .update(payload)
+                    .eq("id", Number(id));
+            } else {
+                res = await window.supabaseClient
+                    .from("performance_all")
+                    .insert(payload);
+            }
+
+            if (res.error) {
+                console.error(res.error);
+                alert("저장 실패: 권한(RLS) 또는 입력값을 확인해주세요.");
+                return;
+            }
+
+            resetForm();
+            loadPerformances();
+        }
+
+        /* =========================
+           수정/삭제 클릭 처리
+        ========================= */
+        function bindTableActions() {
+            const tbody = document.getElementById("perfList");
+
+            tbody.addEventListener("click", async (e) => {
+                const tr = e.target.closest("tr");
+                if (!tr) return;
+
+                const id = tr.dataset.id;
+
+                /* 수정 */
+                if (e.target.classList.contains("btnEdit")) {
+                    document.getElementById("perfId").value = id;
+                    document.getElementById("workDate").value = tr.children[0].textContent.trim();
+                    document.getElementById("workTitle").value = tr.children[1].textContent.trim();
+                    document.getElementById("client").value = tr.children[2].textContent.trim();
+                    window.scrollTo({ top: 0, behavior: "smooth" });
+                    return;
+                }
+
+                /* 삭제 */
+                if (e.target.classList.contains("btnDel")) {
+                    const ok = confirm("정말 삭제할까요?");
+                    if (!ok) return;
+
+                    const { error } = await window.supabaseClient
+                        .from("performance_all")
+                        .delete()
+                        .eq("id", Number(id));
+
+                    if (error) {
+                        console.error(error);
+                        alert("삭제 실패: 권한(RLS)을 확인해주세요.");
+                        return;
+                    }
+
+                    resetForm();
+                    loadPerformances();
+                }
+            });
+        }
+
+        /* =========================
+           폼 초기화
+        ========================= */
+        function resetForm() {
+            document.getElementById("perfId").value = "";
+            document.getElementById("workDate").value = "";
+            document.getElementById("workTitle").value = "";
+            document.getElementById("client").value = "";
+        }
+
+        /* =========================
+           초기 실행
+        ========================= */
+        document.addEventListener("DOMContentLoaded", async () => {
+            const ok = await requireAdmin();
+            if (!ok) return;
+
+            document.getElementById("perfForm").addEventListener("submit", savePerformance);
+            document.getElementById("btnReset").addEventListener("click", resetForm);
+
+            document.getElementById("adminLogoutBtn").addEventListener("click", async () => {
+                await window.supabaseClient.auth.signOut();
+                location.href = "/06_admin/01_admin_login.html";
+            });
+
+            bindTableActions();
+            loadPerformances();
+        });
+    </script>
+</body>
+
+</html>
