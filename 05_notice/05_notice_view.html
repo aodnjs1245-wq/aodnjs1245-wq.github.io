@@ -19,20 +19,14 @@
     <div class="notice-view-box">
       
       <!-- 제목 -->
-      <h2 class="notice-view-title">서환 홈페이지 리뉴얼 안내</h2>
+      <h2 class="notice-view-title" id="noticeTitle"></h2>
 
       <!-- 작성일 -->
       <div class="notice-view-meta">
-        작성일 : 2026-01-20
+         작성일 : <span id="noticeDate"></span>
       </div>
-
       <!-- 본문 -->
-      <div class="notice-view-content">
-        안녕하세요, 서환입니다.<br><br>
-        보다 나은 서비스 제공을 위해 홈페이지가 새롭게 리뉴얼되었습니다.<br>
-        앞으로도 많은 관심과 성원 부탁드립니다.<br><br>
-        감사합니다.
-      </div>
+      <div class="notice-view-content" id="noticeContent"></div>
 
       <!-- 목록 버튼 -->
       <div class="notice-view-btn">
@@ -46,6 +40,55 @@
 <!-- ===== 공통 푸터 삽입 영역 ===== -->
 <div id="app-footer"></div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/js/01_supabase.js"></script>
 <script src="/js/00_common.js"></script>
+
+<script>
+/* =========================
+   공지 상세 렌더
+========================= */
+function formatDate(iso){
+  const d = new Date(iso);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+document.addEventListener("DOMContentLoaded", async () => {
+  const params = new URLSearchParams(location.search);
+  const id = params.get("id");
+
+  const elTitle = document.getElementById("noticeTitle");
+  const elDate = document.getElementById("noticeDate");
+  const elContent = document.getElementById("noticeContent");
+
+  if (!id){
+    elTitle.textContent = "잘못된 접근입니다.";
+    elDate.textContent = "";
+    elContent.textContent = "공지 ID가 없습니다.";
+    return;
+  }
+
+  const { data, error } = await window.supabaseClient
+    .from("notices")
+    .select("title, content, created_at")
+    .eq("id", Number(id))
+    .single();
+
+  if (error || !data){
+    console.error(error);
+    elTitle.textContent = "공지사항을 불러오지 못했습니다.";
+    elDate.textContent = "";
+    elContent.textContent = "잠시 후 다시 시도해주세요.";
+    return;
+  }
+
+  elTitle.textContent = data.title;
+  elDate.textContent = formatDate(data.created_at);
+  elContent.innerHTML = String(data.content).replaceAll("\n", "<br>");
+});
+</script>
 </body>
 </html>
