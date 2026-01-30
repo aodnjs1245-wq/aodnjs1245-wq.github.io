@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>서환산업 | 공지 작성</title>
+
+  <link rel="stylesheet" href="/css/01_common.css">
+  <link rel="stylesheet" href="/css/02_pages.css">
+  <link rel="stylesheet" href="/css/03_admin.css">
+</head>
+<body>
+
+  <main class="admin-wrap">
+    <section class="admin-card">
+      <div class="admin-card__head">
+        <h1 class="admin-card__title">공지 작성</h1>
+        <p class="admin-card__desc">작성 후 저장하면 공지사항에 자동 반영됩니다.</p>
+      </div>
+
+      <div class="admin-card__body">
+        <form id="noticeWriteForm">
+          <div class="admin-field">
+            <label class="admin-label" for="noticeTitle">제목</label>
+            <input class="admin-input" id="noticeTitle" type="text" placeholder="공지 제목을 입력하세요">
+          </div>
+
+          <div class="admin-field">
+            <label class="admin-label" for="noticeContent">내용</label>
+            <textarea class="admin-textarea" id="noticeContent" placeholder="공지 내용을 입력하세요"></textarea>
+          </div>
+
+          <div class="admin-actions">
+            <button class="admin-btn admin-btn--primary" type="submit">등록</button>
+            <a class="admin-btn admin-btn--ghost" href="/06_admin/03_admin_home.html">관리자 홈</a>
+            <a class="admin-btn admin-btn--ghost" href="/05_notice/05_notice.html">공지 목록</a>
+          </div>
+
+          <p class="admin-note">
+            줄바꿈은 상세 페이지에서 자동으로 반영됩니다.
+          </p>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/js/01_supabase.js"></script>
+
+  <script>
+  /* =========================
+     공지 작성
+  ========================= */
+  document.addEventListener("DOMContentLoaded", async () => {
+    const { data: { session } } = await window.supabaseClient.auth.getSession();
+    if (!session) {
+      location.href = "/06_admin/01_admin_login.html";
+      return;
+    }
+
+    const form = document.getElementById("noticeWriteForm");
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const title = document.getElementById("noticeTitle").value.trim();
+      const content = document.getElementById("noticeContent").value.trim();
+
+      if (!title || !content) {
+        alert("제목/내용을 입력해주세요.");
+        return;
+      }
+
+      const { error } = await window.supabaseClient
+        .from("notices")
+        .insert([{ title, content }]);
+
+      if (error) {
+        alert("저장 실패: " + error.message);
+        return;
+      }
+
+      alert("등록 완료");
+      location.href = "/06_admin/04_notice_manage.html";
+    });
+  });
+  </script>
+</body>
+</html>

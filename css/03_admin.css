@@ -1,0 +1,153 @@
+/* =========================
+   관리자 페이지 전용 스타일
+========================= */
+
+.admin-wrap{
+  min-height: calc(100vh - 120px);
+  padding: 40px 20px 80px;
+  background: #f3f4f6;
+}
+
+.admin-card{
+  max-width: 720px;
+  margin: 0 auto;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+  overflow: hidden;
+}
+
+.admin-card__head{
+  padding: 18px 20px;
+  border-bottom: 1px solid #e5e7eb;
+  background: #1f2a44;
+  color: #ffffff;
+}
+
+.admin-card__title{
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.2px;
+}
+
+.admin-card__desc{
+  margin: 6px 0 0;
+  font-size: 13px;
+  color: rgba(255,255,255,0.85);
+}
+
+.admin-card__body{
+  padding: 22px 20px 24px;
+}
+
+.admin-field{
+  margin-bottom: 14px;
+}
+
+.admin-label{
+  display: block;
+  font-size: 13px;
+  color: #374151;
+  margin-bottom: 8px;
+  font-weight: 700;
+}
+
+.admin-input,
+.admin-textarea{
+  width: 100%;
+  padding: 12px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  font-size: 14px;
+  color: #374151;
+  background: #ffffff;
+  outline: none;
+}
+
+.admin-input:focus,
+.admin-textarea:focus{
+  border-color: #1f2a44;
+  box-shadow: 0 0 0 3px rgba(31,42,68,0.12);
+}
+
+.admin-textarea{
+  min-height: 220px;
+  resize: vertical;
+  line-height: 1.7;
+}
+
+.admin-actions{
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+}
+
+.admin-btn{
+  border: 0;
+  cursor: pointer;
+  padding: 12px 14px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.admin-btn--primary{
+  background: #1f2a44;
+  color: #ffffff;
+}
+
+.admin-btn--primary:hover{
+  filter: brightness(0.95);
+}
+
+.admin-btn--ghost{
+  background: #ffffff;
+  color: #374151;
+  border: 1px solid #e5e7eb;
+}
+
+.admin-btn--danger{
+  background: #111827;
+  color: #ffffff;
+}
+
+.admin-note{
+  margin-top: 12px;
+  font-size: 12px;
+  color: #6b7280;
+  line-height: 1.6;
+}
+
+.admin-grid{
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+}
+
+.admin-panel{
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 16px;
+  background: #ffffff;
+}
+
+.admin-panel__title{
+  margin: 0 0 8px;
+  font-size: 14px;
+  font-weight: 800;
+  color: #374151;
+}
+
+.admin-panel__text{
+  margin: 0;
+  font-size: 13px;
+  color: #6b7280;
+  line-height: 1.6;
+}
