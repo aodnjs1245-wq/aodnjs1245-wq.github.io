@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>서환 | 회사개요</title>
+
+<!-- 공통 -->
+<link rel="stylesheet" href="/css/01_common.css">
+<!-- 페이지별 -->
+<link rel="stylesheet" href="/css/02_pages.css">
+</head>
+<body>
+<!-- ===== 공통 헤더 삽입 영역 ===== -->
+<div id="app-header"></div>
+
+
+  <!-- ===== 메인 영역(본문 시작) ===== -->
+<main class="subpage">
+
+<!-- ===== 회사개요 상단 비주얼 ===== -->
+<section class="sub-visual sub-visual--company">
+  <div class="sub-visual-inner">
+    <h1 class="sub-visual-title">회사개요</h1>
+    <p class="sub-visual-desc">
+      서환산업의 기본 정보를 한눈에 확인하실 수 있습니다.
+    </p>
+    
+    <!-- ===== 현재 위치 경로 (Breadcrumb) ===== -->
+  <nav class="breadcrumb" aria-label="현재 위치">
+    <a href="/01_home/01_index.html" class="breadcrumb-link">홈</a>
+    <span class="breadcrumb-sep">/</span>
+
+ <!-- 회사소개 드롭다운 -->
+  <div class="breadcrumb-dropdown">
+  <a class="breadcrumb-link breadcrumb-toggle" href="/02_company/01_company_overview.html">
+    회사소개
+  </a>
+
+    <ul class="breadcrumb-menu">
+      <li><a href="/02_company/01_company_overview.html">회사개요</a></li>
+      <li><a href="/02_company/02_company_history.html">연혁</a></li>
+      <li><a href="/02_company/03_company_ceo.html">CEO 인사말</a></li>
+      <li><a href="/02_company/04_company_org.html">조직도</a></li>
+      <li><a href="/02_company/05_company_license.html">면허 및 인증서</a></li>
+      <li><a href="/02_company/06_company_location.html">찾아오시는 길</a></li>
+    </ul>
+  </div>
+    <span class="breadcrumb-sep">/</span>
+
+    <span class="breadcrumb-current">면허 및 인증서</span>
+  </nav>
+  </section>
+  <!-- ===== 면허 및 인증서(면허/인증서) ===== -->
+<section class="license-section">
+
+  <!-- ===== 표 ===== -->
+  <div class="license-table-wrap">
+
+    <table class="license-table">
+      <caption class="sr-only">면허 및 인증서 현황</caption>
+
+      <thead>
+        <tr>
+          <th scope="col">구분</th>
+          <th scope="col">종별</th>
+          <th scope="col">발급기관</th>
+          <th scope="col">등록번호</th>
+          <th scope="col">등록일자</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        <!-- 면허 -->
+        <tr data-type="license">
+          <td><span class="license-badge license-badge-license">면허</span></td>
+          <td>기계설비공사업</td>
+          <td>태안군수</td>
+          <td class="license-code">제주-92-12-11</td>
+          <td>1992.09.07</td>
+        </tr>
+
+        <tr data-type="license">
+          <td><span class="license-badge license-badge-license">면허</span></td>
+          <td>전기공사업</td>
+          <td>충청남도지사</td>
+          <td class="license-code">제 충남-01088호</td>
+          <td>2015.01.07</td>
+        </tr>
+        <tr data-type="license">
+          <td><span class="license-badge license-badge-license">등록증</span></td>
+          <td>공장등록증</td>
+          <td>한국산업단지공단</td>
+          <td class="license-code">448252005099999</td>
+          <td>2015.01.07</td>
+        </tr>
+
+        <!-- 인증서 -->
+        <tr data-type="cert">
+          <td><span class="license-badge license-badge-cert">인증서</span></td>
+          <td>ISO 9001</td>
+          <td>한국글로벌인증원장</td>
+          <td class="license-code">022-80475-Q</td>
+          <td>2013.03.08</td>
+        </tr>
+
+        <tr data-type="cert">
+          <td><span class="license-badge license-badge-cert">인증서</span></td>
+          <td>ISO 45001</td>
+          <td>한국글로벌인증원장</td>
+          <td class="license-code">022-80475-O</td>
+          <td>2020.11.16</td>
+        </tr>
+        
+        <tr data-type="cert">
+          <td><span class="license-badge license-badge-cert">상표권</span></td>
+          <td>상표등록증(해늘터)</td>
+          <td>특허청장</td>
+          <td class="license-code">제 40-2064-670호</td>
+          <td>2023.08.09</td>
+        </tr>
+
+      </tbody>
+    </table>
+
+  </div>
+
+  <!-- ===== 안내 문구 ===== -->
+  <p class="license-note">
+    등록번호(면허번호)는 발급기관 기준으로 관리되며, 증빙 자료는 필요 시 별도 제출 가능합니다.
+  </p>
+
+</section>
+
+<!-- ===== 공통 푸터 삽입 영역 ===== -->
+<div id="app-footer"></div>
+
+<script src="/js/00_common.js"></script>
+</body>
+</html>

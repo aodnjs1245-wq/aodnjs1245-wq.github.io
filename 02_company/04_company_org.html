@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>서환 | 회사개요</title>
+
+<!-- 공통 -->
+<link rel="stylesheet" href="/css/01_common.css">
+<!-- 페이지별 -->
+<link rel="stylesheet" href="/css/02_pages.css">
+</head>
+<body>
+  
+  <!-- 공통 헤더 -->
+  <div id="app-header"></div>
+
+  <!-- ===== 메인 영역(본문 시작) ===== -->
+<main class="subpage">
+
+<!-- ===== 회사개요 상단 비주얼 ===== -->
+<section class="sub-visual sub-visual--company">
+  <div class="sub-visual-inner">
+    <h1 class="sub-visual-title">회사개요</h1>
+    <p class="sub-visual-desc">
+      서환산업의 기본 정보를 한눈에 확인하실 수 있습니다.
+    </p>
+    
+    <!-- ===== 현재 위치 경로 (Breadcrumb) ===== -->
+  <nav class="breadcrumb" aria-label="현재 위치">
+    <a href="/01_home/01_index.html" class="breadcrumb-link">홈</a>
+    <span class="breadcrumb-sep">/</span>
+
+     <!-- 회사소개 드롭다운 -->
+  <div class="breadcrumb-dropdown">
+  <a class="breadcrumb-link breadcrumb-toggle" href="/02_company/01_company_overview.html">
+    회사소개
+  </a>
+
+    <ul class="breadcrumb-menu">
+      <li><a href="/02_company/01_company_overview.html">회사개요</a></li>
+      <li><a href="/02_company/02_company_history.html">연혁</a></li>
+      <li><a href="/02_company/03_company_ceo.html">CEO 인사말</a></li>
+      <li><a href="/02_company/04_company_org.html">조직도</a></li>
+      <li><a href="/02_company/05_company_license.html">면허 및 인증서</a></li>
+      <li><a href="/02_company/06_company_location.html">찾아오시는 길</a></li>
+    </ul>
+  </div>
+    <span class="breadcrumb-sep">/</span>
+
+    <span class="breadcrumb-current">조직도</span>
+  </nav>
+  </section>
+  <!-- ===== 조직도 ===== -->
+<section class="org-chart">
+
+<!-- ===== 상단: 대표이사 ===== -->
+<div class="org-level org-level-1">
+  <div class="org-node org-node-root org-node-circle">대표이사</div>
+</div>
+
+<!-- ===== 연결선: 대표이사 → 1차 조직 ===== -->
+<div class="org-connector">
+  <span class="org-connector-v"></span>
+  <span class="org-connector-h"></span>
+</div>
+
+  <!-- ===== 1차 조직(3개) ===== -->
+  <div class="org-level org-level-2">
+
+    <!-- 관리부 -->
+    <div class="org-branch">
+      <div class="org-node org-node-main">관리부</div>
+    </div>
+
+    <!-- 건설사업본부 -->
+    <div class="org-branch">
+      <div class="org-node org-node-main">건설사업본부</div>
+
+      <!-- 하위: 제작부 -->
+      <div class="org-sub">
+        <div class="org-node org-node-sub">제작부</div>
+      </div>
+    </div>
+
+    <!-- 발전운영지원실 -->
+    <div class="org-branch">
+      <div class="org-node org-node-main">발전운영지원실</div>
+
+      <!-- 하위: 태양광 사업장 -->
+      <div class="org-sub">
+        <div class="org-node org-node-sub">서부발전 창기 태양광</div>
+        <div class="org-node org-node-sub">이원호 수상태양광</div>
+        <div class="org-node org-node-sub">햇들원 태양광</div>
+      </div>
+    </div>
+
+  </div>
+
+</section>
+<!-- ===== 공통 푸터 삽입 영역 ===== -->
+<div id="app-footer"></div>
+
+<script src="/js/00_common.js"></script>
+</body>
+</body>
+</html>

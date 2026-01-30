@@ -1,0 +1,539 @@
+/* =========================
+   01_common.css
+   - 공통 레이아웃/컴포넌트/헤더/푸터/서브비주얼/브레드크럼
+========================= */
+
+/* =========================
+   기본 설정
+========================= */
+html, body{
+  overflow-x: hidden; /* 가로 스크롤 방지 */
+}
+
+body{
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background-color: #f3f4f6;
+  color: #222;
+}
+
+/* =========================
+   공통 카드 그림자
+========================= */
+.card{
+  box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+}
+
+/* =========================
+   헤더 / 네비게이션
+========================= */
+header{
+  background-color: #ffffff;
+  padding: 20px 40px;
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+/* 좌측 로고 영역 */
+.logo{
+  flex: 0 0 220px;
+  display: flex;
+  align-items: center;
+}
+
+.logo a{
+  text-decoration: none;
+  color: inherit;
+}
+
+.logo img{
+  height: 40px;
+  display: block;
+}
+
+/* 중앙 GNB */
+nav.gnb{
+  flex: 1 1 auto;
+  display: flex;
+  justify-content: center;
+  position: relative;
+}
+
+/* 우측 여백(중앙축 보정용) */
+.header-spacer{
+  flex: 0 0 220px;
+}
+
+/* 메뉴 */
+.gnb-list{
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  gap: 30px;
+  align-items: center;
+}
+
+.gnb-item{
+  position: relative;
+}
+
+/* 모바일 탭 토글 열림 상태 */
+.gnb-item.is-open .sub-menu{
+  display: block;
+}
+
+.gnb-link{
+  position: relative; /* 밑줄 위치 기준 */
+  display: inline-block;
+  padding: 14px 8px;
+  text-decoration: none;
+  color: #222;
+  font-weight: 500;
+}
+
+/* hover 밑줄 애니메이션 */
+.gnb-link::after{
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: 6px;
+  width: 100%;
+  height: 2px;
+  background: #1f2a44;
+
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.35s cubic-bezier(.2,.8,.2,1);
+}
+
+.gnb-link:hover::after{
+  transform: scaleX(1);
+}
+
+.gnb-link:hover{
+  color: #1f2a44;
+}
+
+.gnb-link.is-active{
+  color: #1f2a44;
+}
+
+.gnb-link.is-active::after{
+  transform: scaleX(1);
+}
+
+/* 드롭다운 */
+.sub-menu{
+  list-style: none;
+  margin: 0;
+  padding: 6px 0;
+  text-align: center;
+
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+
+  min-width: 210px;
+  background: #ffffff;
+  border: 1px solid rgba(0,0,0,0.08);
+  border-radius: 10px;
+  box-shadow: 0 10px 24px rgba(0,0,0,0.08);
+  z-index: 999;
+
+  display: none;
+}
+
+.sub-menu a{
+  display: block;
+  padding: 10px 16px;
+  text-decoration: none;
+  color: #333;
+  white-space: nowrap;
+}
+
+.sub-menu a:hover{
+  background: #f4f4f4;
+}
+
+/* hover 또는 키보드 포커스 시 표시 */
+.gnb-item:hover .sub-menu,
+.gnb-item:focus-within .sub-menu{
+  display: block;
+}
+
+/* PC: hover 끊김 방지 */
+.gnb-item::after{
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 100%;
+  width: 100%;
+  height: 10px;
+  background: transparent;
+}
+
+/* =========================
+   서브페이지 상단 비주얼
+========================= */
+.sub-visual{
+  position: relative;
+  min-height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  margin-bottom: 60px;
+}
+
+/* 어두운 오버레이 */
+.sub-visual::before{
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(31, 42, 68, 0.55);
+}
+
+/* 내부 텍스트 영역 */
+.sub-visual-inner{
+  position: relative;
+  max-width: 1100px;
+  width: 100%;
+  text-align: center;
+}
+
+/* 제목 */
+.sub-visual-title{
+  margin: 0;
+  font-size: 36px;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+/* 설명 */
+.sub-visual-desc{
+  margin-top: 12px;
+  font-size: 15px;
+  line-height: 1.6;
+  color: rgba(255,255,255,0.9);
+}
+
+/* 회사개요 배경 이미지(공통으로 쓰는 값) */
+.sub-visual--company{
+  background-image: url("/assets/images/01_index/01_index_main.jpg");
+}
+
+/* =========================
+   서브페이지 공통
+========================= */
+.subpage{
+  padding-top: 0px;
+}
+
+.page-header{
+  text-align: center;
+  margin-bottom: 60px;
+}
+
+.page-header h1{
+  font-size: 36px;
+  margin-bottom: 10px;
+}
+
+.page-header p{
+  color: #666;
+}
+
+/* =========================
+   카드 레이아웃(여러 페이지에서 재사용)
+========================= */
+.services{
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 20px 80px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.service-card{
+  flex: 1 1 calc(50% - 20px);
+  background: #f9f9f9;
+  padding: 40px;
+  border-radius: 12px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+
+  display: block;
+  text-decoration: none;
+  color: inherit;
+}
+
+.service-card h2{
+  margin-bottom: 15px;
+  font-size: 22px;
+}
+
+.service-card p{
+  color: #555;
+  line-height: 1.8;
+}
+
+.service-card:hover{
+  transform: translateY(-5px);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+}
+
+/* =========================
+   버튼(공통)
+========================= */
+.btn-row{
+  max-width: 1100px;
+  margin: 60px auto 100px;
+  padding: 0 20px;
+  text-align: right;
+}
+
+.btn{
+  display: inline-block;
+  padding: 12px 20px;
+  background: #333;
+  color: #fff;
+  font-size: 14px;
+  border-radius: 6px;
+  text-decoration: none;
+}
+
+.btn:hover{
+  background: #555;
+}
+
+/* =========================
+   Breadcrumb(공통)
+========================= */
+.breadcrumb{
+  margin-top: 12px;
+  font-size: 14px;
+  color: #ffffff;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.breadcrumb-link{
+  color: #ffffff;
+  text-decoration: none;
+}
+
+.breadcrumb-link:hover{
+  text-decoration: underline;
+}
+
+.breadcrumb-sep{
+  color: #9ca3af;
+}
+
+.breadcrumb-current{
+  color: #ffffff;
+  font-weight: 700;
+}
+
+/* Breadcrumb 드롭다운 */
+.breadcrumb-dropdown{
+  position: relative;
+  display: inline-block;
+}
+
+.breadcrumb-menu{
+  display: none;
+  position: absolute;
+  top: 100%;
+  margin-top: 6px;
+
+  min-width: 150px;
+  background-color: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 6px 0;
+  list-style: none;
+  padding-left: 0;
+  z-index: 1000;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.08);
+
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.breadcrumb-menu li a{
+  display: block;
+  padding: 8px 12px;
+  font-size: 13px;
+  color: #1f2a44;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.breadcrumb-menu li a:hover{
+  background-color: #f3f4f6;
+  text-decoration: none;
+}
+
+.breadcrumb-dropdown:hover .breadcrumb-menu{
+  display: block;
+}
+
+/* breadcrumb hover 끊김 방지 */
+.breadcrumb-dropdown::after{
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 100%;
+  width: 100%;
+  height: 10px;
+}
+
+/* breadcrumb: 터치 토글 열림 상태 */
+.breadcrumb-dropdown.is-open .breadcrumb-menu{
+  display: block;
+}
+
+/* =========================
+   푸터(공통)
+========================= */
+.site-footer{
+  background: #2f2f2f;
+  color: #ccc;
+  padding: 40px 20px;
+  font-size: 14px;
+
+  user-select: none;
+  -webkit-user-select: none;
+  -ms-user-select: none;
+}
+
+.footer-inner{
+  max-width: 1100px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 40px;
+}
+
+.footer-logo{
+  font-size: 22px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.footer-logo img{
+  height: 40px;
+  display: block;
+}
+
+.footer-info p{
+  margin: 4px 0;
+  line-height: 1.6;
+}
+
+.footer-info .copyright{
+  margin-top: 10px;
+  font-size: 13px;
+  color: #999;
+}
+
+/* =========================
+   공통 반응형
+========================= */
+@media (max-width: 768px){
+
+  .sub-visual{
+    min-height: 160px;
+    padding: 32px 16px;
+  }
+
+  header{
+    flex-direction: column;
+    align-items: center;
+    row-gap: 12px;
+    padding: 18px 20px;
+  }
+
+  .header-spacer{
+    display: none;
+  }
+
+  .logo{
+    flex: 0 0 auto;
+    width: auto;
+  }
+
+  nav.gnb{
+    margin-top: 10px;
+    width: 100%;
+    justify-content: center;
+  }
+
+  .gnb-list{
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 14px;
+    align-items: center;
+    width: auto;
+  }
+
+  .gnb-link{
+    padding: 10px 0;
+  }
+
+  .sub-menu{
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+
+    width: min(180px, 90vw);
+    max-width: 90vw;
+    min-width: 0;
+    box-sizing: border-box;
+    padding: 6px 0;
+  }
+
+  .sub-menu a{
+    padding: 10px 14px;
+    line-height: 1.4;
+    text-align: center;
+  }
+
+  .services{
+    flex-direction: column;
+  }
+
+  .service-card{
+    flex: 1 1 100%;
+  }
+
+  .btn-row{
+    text-align: center;
+    margin: 40px auto 60px;
+  }
+
+  .breadcrumb{
+    justify-content: center;
+    text-align: center;
+  }
+
+  .footer-inner{
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 20px;
+  }
+
+  .footer-logo{
+    font-size: 20px;
+  }
+}

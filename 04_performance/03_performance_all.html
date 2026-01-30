@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>전체 사업실적 | 서환</title>
+<!-- 공통 -->
+<link rel="stylesheet" href="/css/01_common.css">
+<!-- 페이지별 -->
+<link rel="stylesheet" href="/css/02_pages.css">
+</head>
+<body>
+
+<!-- ===== 공통 헤더 삽입 영역 ===== -->
+<div id="app-header"></div>
+
+  <main class="subpage">
+
+<!-- ===== 사업실적 상단 비주얼 ===== -->
+<section class="sub-visual sub-visual--company">
+  <div class="sub-visual-inner">
+    <h1 class="sub-visual-title">전체 사업실적</h1>
+    <p class="sub-visual-desc">
+      서환산업의 전체 사업실적입니다.
+    </p>  
+    
+      <nav class="breadcrumb" aria-label="현재 위치">
+
+  <a href="/01_home/01_index.html" class="breadcrumb-link">홈</a>
+  <span class="breadcrumb-sep">/</span>
+
+  <!-- 사업실적 드롭다운 -->
+  <div class="breadcrumb-dropdown">
+  <a class="breadcrumb-link breadcrumb-toggle" href="/04_performance/04_portfolio.html">
+    사업실적
+  </a>
+
+    <ul class="breadcrumb-menu">
+      <li><a href="/04_performance/01_performance_key.html">주요 실적</a></li>
+      <li><a href="/04_performance/05_performance_delivery.html">제작·납품 실적</a></li>
+      <li><a href="/04_performance/02_performance_maintenance.html">운영 및 경상정비 실적</a></li>
+      <li><a href="/04_performance/03_performance_all.html">전체 사업실적</a></li>
+    </ul>
+  </div>
+
+  <span class="breadcrumb-sep">/</span>
+  <span class="breadcrumb-current">전체 사업실적</span>
+
+</nav>
+    </section>
+
+<!-- ===== 전체 사업실적 표 ===== -->
+<section class="perf-table-section">
+  <div class="table-wrap">
+    <table class="perf-table perf-table-all">
+      <thead>
+        <tr>
+          <th>공사일자</th>
+          <th>공사명</th>
+          <th>발주처</th>
+        </tr>
+      </thead>
+
+      <tbody id="allPerfTbody"></tbody>
+    </table>
+  </div>
+
+  <!-- ===== 페이지네이션 ===== -->
+  <nav class="pagination" aria-label="페이지 이동" id="allPerfPagination"></nav>
+</section>
+
+    </main>
+
+<script>
+  /* =========================
+     전체 사업실적(3열) - 25개 페이지네이션
+     - RAW_TSV에 "공사일자\t공사명\t발주처" 형식으로 붙여넣기
+     - 최신이 위로 오도록 자동 정렬
+  ========================= */
+
+// 수동 추가용 최신 실적 
+const MANUAL_ITEMS = [
+  /*{
+    date: "2025.01",
+    title: "신규 태양광 발전소 전기공사",
+    client: "서환에너지㈜"
+  }*/
+  // ↓ 다음에 추가할 땐 여기만 한 줄씩 늘리면 됨
+];
+  const RAW_TSV = `
+공사일자	공사명	발주처
+2024.08	60MW급 태안 햇들원태양광 발전소 사업 공사	태안햇들원태양광㈜
+2024.06	이원호 수상태양광 발전설비 수상 안전난간대 설치공사	㈜에스에너지
+2024.06	이원호 주민형 수상 태양광 30MW 관련 주변지역 식재공사	㈜이원신재생에너지복지마을
+2023.06	공주교대 실과관 증축 및 리모델링공사(전기)	공주교육대학교
+2023.05	우성중학교 교실증축 및 공간재구조화 기계설비공사	충남공주교육지원청
+2022.12	원북면 마산2리 태양광 발전사업	마산이화협동조합
+2022.10	공주 금강철교 경관조명 개선공사	충청남도 공주시
+2022.06	태안지역자활센터 리모델링공사(전기)	태안지역자활센터
+2022.04	이원호 주민형 수상태양광 30MW 전기 및 전기실공사	㈜이원신재생에너지복지마을
+2021.06	이원호 수상태양광 발전설비 수상태양광 공사부지 및 현장사무실 가설공사	㈜에스에너지
+2021.06	이원호 수상태양광 발전설비 수상태양광 구조물 및 계류설비 공사	㈜에스에너지
+2021.04	태안창기 PV+ESS 발전소 도로연장공사	서부그린에너지㈜
+2021.01	부석면 청사 건립공사(전기)	충청남도 서산시
+2020.12	태안창기 1~4호기 태양광 발전소 전기실 기초공사, 진입로 포장, 배수펌프장 설치 등	서부그린에너지㈜
+2020.11	태안창기 1~4호기 태양광 발전사업 구축공사 배수시설 및 도로공사	㈜에스에너지
+2020.10	태안창기 1~4호기 태양광 발전사업 구축공사	LS일렉트릭 ㈜
+2020.06	삼양태양광(주) 발전소 건설공사	삼양태양광㈜
+2020.02	안면읍 다목적 운동장 가로등 설치공사	충청남도 태안군
+2019.04	제1~8호기 석탄설비 안전 시설물 긴급 개선공사	한국서부발전㈜
+2018.07	제 1~4호기 석탄설비 Conveyor 회전부 안전시설 교체공사	한국서부발전㈜
+2018.06	충남체육고등학교 기숙사 수선 기계설비공사	충청남도논산 계룡교육지원청
+2018.05	화곡저수지 수변공간 보안등 설치공사	충청남도 서산시
+2018.02	태안 3,4호기 유기성고형연료 혼소설비 보강공사	한국서부발전㈜
+2017.11	탈질설비 설치공사	한라산업개발㈜
+2017.08	자연과학대학관 급탕배관 설치공사	공주대학교
+2017.06	탈황 복합세정설비 공기압축기용 배관 설치공사	한국서부발전㈜
+2015.04	Supervision Service	대림산업㈜
+2015.04	그레이팅 고정철물 교체작업	대림산업㈜
+2015.02	동두천복합화력발전소 1~2호기 발전설비 경상정비공사	동두천 드림파워
+2013.11	태안 9,10 expansion joint 제작 및 설치	주식회사 에스아이시
+2013.10	제 7,8호기 환경설비 정비편의시설 설치공사	한국서부발전㈜ 태안발전본부
+2013.10	태안화력 9,10호기 기전공사	에스케이건설㈜
+2013.09	당진화력 9,10호기 기전공사 중 회처리설비 설치공사	경남기업㈜
+2013.09	통합정제시스템 철골구조물 제작	한국전력기술㈜
+2013.07	송암초등학교 다목적강당 증축 기계설비공사	충청남도 태안교육청
+2013.06	태안화력 1부두 하역기(CSU-01A) 설치 및 해체 공사	현대삼호중공업
+2013.05	8호기 보일러설비 정비편의시설 설치공사	한국서부발전㈜ 태안발전본부
+2013.05	태안 IGCC Test-bed 철골구조물 구축공사	고등기술연구원
+2013.04	제 8호기 환경설비 정비편의시설 설치공사	한국서부발전㈜ 태안발전본부
+2013.04	태안화력 1부두 하역기 설치 및 잔여작업(PUNCH) 공사	현대삼호중공업
+2013.04	소각장 발생 여열의 휴게동 공급공사	충남 태안군 환경관리사업소
+2012.12	태안 IGCC 가스화플랜트 건설공사 (Pipe rack 및 잡철물 설치공사)	한국서부발전㈜ 태안발전본부
+2012.11	부여학생수영장 샤워장증축 및 기타설비공사	충청남도 부여교육청
+2012.10	COAL SILO 제작공사	한국서부발전㈜ 태안발전본부
+2012.06	제 1~4호기 회이송 배관 교체공사	한국서부발전㈜ 태안발전본부
+2012.05	1부두 석탄하역설비 보강공사	한국서부발전㈜ 태안발전본부
+2011.11	태안화력 1,3부두 Conveyor Belt 복선화 제작 및 기계설치공사	한국서부발전㈜ 태안발전본부
+2011.11	제 5~8호기 석탄취급설비 상하탄기 낙탄방지판 설치공사	한국서부발전㈜ 태안발전본부
+2011.11	재활용 처리시설 압축기 보수공사	태안군 환경관리사업소
+2011.10	관2리 제수문 설치공사	충남태안군
+2011.10	지방관리 방조제 배수갑문 전동화사업(2차)	충남태안군
+2011.08	태안초 강당 증축 기계설비공사	태안교육지원청
+2011.08	HHI 군산 80톤 JIB CRANE 설치공사	현대중공업
+2011.07	태안종합학습센터 증축 기계설비공사	태안교육지원청
+2011.05	영흥화력 1부두 컨베어 원상복구공사	한국남동발전㈜ 영흥화력본부
+2011.05	1 & 3 부두 CSU 현장하역 설치 및 해체공사	한국서부발전㈜ 태안발전본부
+2011.04	영흥화력 CV-01A/B BELT CONVEYOL 공사	한국남동발전㈜ 영흥화력본부
+2011.04	CSU (A,B호기) OVER BEAM 수리공사	한국남동발전㈜ 영흥화력본부
+2011.04	영흥화력#3호기 석탄취급설비공사	한국남동발전㈜ 영흥화력본부
+2011.03	영흥화력 긴급복구 공사	한국남동발전㈜ 영흥화력본부
+2011.03	컨베이어 체인 인양공급	태안군환경사업소
+2011.02	음폐수 이송설비 개선공사	태안군환경사업소
+2011.01	FAN HOUSE 제작 및 설치공사	한국서부발전㈜ 태안발전본부
+2010.12	삼천포화력 ST/RE 1기 공급공사	한국남동발전㈜ 삼천포화력본부
+2010.11	온양여자고등학교 기숙사증축 기계설비공사	충남아산교육청
+2010.08	홍성여고 기숙사증축 기계설비공사	충청남도 교육청
+2010.07	앙카볼트 설치공사	한국서부발전㈜ 태안발전본부
+2010.05	SLP TWSP	한국서부발전㈜ 태안발전본부
+2010.05	근흥초등학교 관사 개축 기계설비공사	충청남도 태안교육청
+2010.04	군청사 노후배관 및 밸브 교체공사	충청남도 태안군
+2010.03	옴폐구 저장탱그 증설공사	충청남도 태안군
+2010.03	C.S.U用 FOUNDATION & RAIL 설치공사	한국서부발전㈜ 태안발전본부
+2010.02	태안화력 석탄하역설비 설치공사	한국서부발전㈜ 태안발전본부
+2009.11	영월복합화력 보조보일러 이설공사	한국남부발전㈜ 영월복합화력건설처
+2009.11	화동초등학교 담고적강당 증축 기계설비공사	충청남도 태안교육청
+2009.08	백화초등학교 비가림시설 설치공사	백화초등학교
+2009.05	6호기 암모니아 배관공사	한국서부발전㈜ 태안발전본부
+2009.04	신관초등학교 교실증축 및 기타 기계설비공사	충청남도 공주교육청
+2009.02	군산복합화력 보조보일러 배관 및 기계설치공사	한국서부발전㈜ 군산건설처
+2009.02	방포초등학교 다목적강당 증축 기계설비공사	충청남도 태안교육청
+2009.02	원이중 이원분교 화장실 수선기계설비공사	충청남도 태안교육청
+2008.12	모항초등학교 화장실수선 기계설비공사	충청남도 태안교육청
+2008.11	제3호기 SLP 점검용 철구조불 교체공사	한전KPS㈜ 태안사업소
+2008.06	원이중학교 화장실수선 기계설비공사	충청남도 태안교육청
+2008.06	태양광발전 구조물설치	에너지연구소㈜
+2008.05	태안화력 7,8호기 건설공사중 가설사무실 철거공사	한국서부발전㈜ 태안발전본부
+2008.04	폐수 저장탱크 외 제작/납품/설치	한국서부발전㈜ 태안발전본부
+2008.03	제3호기 탈황설비 정비편의시설 설치공사	한국서부발전㈜ 태안발전본부
+2008.03	제6호기 전기집진기 수세정 노즐 외주가공 지원작업	한국서부발전㈜ 태안발전본부
+2008.03	태안 태양광발전소 구축사업	LG CNS㈜
+2008.02	제 5,6호기 탈황설비 정비편의시설 공사	한국서부발전㈜ 태안발전본부
+2008.02	Slurry 배관 1,2호기 A 및 3,4호기 A,C 이설공사	한국서부발전㈜ 태안발전본부
+2007.11	창기중학교 반자시설 창호교체공사	충남태안교육청
+2007.11	제 4호기 SLP 부대시설 설치공사	한전KPS㈜ 태안사업소
+2007.10	제 5,6호기 Return Water Line 신설공사	한국서부발전㈜ 태안발전본부
+2007.08	안기리보건진료소 신축(기계,설비)공사	태안군보건의료원
+2007.07	이원초등학교 화장실수선 기계설비공사	충남태안교육청
+2007.07	제 1~4호기 회이송배관 종단부 연장공사	한국서부발전㈜ 태안발전본부
+2007.04	제 2호기 SLP 부대시설 설치공사	한전KPS㈜ 태안사업소
+2006.12	제 1호기 SLP 진동방지 보강설비 및 부대시설공사	한전기공㈜
+2006.12	태안화력 7,8선설공사중 제2회사장 회처리설비 배관설치공사	두산중공업㈜
+2006.10	태안 제1회사장 살수설비 공사	SH엔지니어링㈜
+2006.07	6호기 FDF 흡입구 Louver 설치공사	한국서부발전㈜ 태안발전본부
+2006.05	태안화력5~8호기 회정제설비 공사중 기계제작 설치공사	한라산업개발㈜
+2006.05	제 5호기 터빈 Major Valve 정비편의시설 설치공사	한국서부발전㈜ 태안발전본부
+2006.05	제 3호기 PC PIPE 점검용발판 설치공사	한국서부발전㈜ 태안발전본부
+2006.04	태안화력5~8호기 회정제설비 공사중 SILO 제작 설치공사	한라산업개발㈜
+2006.02	태안화력 3호기 PC Pipe 점검용발판 설치공사	한국서부발전㈜ 태안발전본부
+2005.12	태안화력 5, 6호기 ST/RE-01C Bucket Wheel Shaft BRG 교체공사	한국서부발전㈜ 태안발전본부
+2005.11	태안화력 7, 8호기 공용설비공사중 시운전편의시설 설치공사	두산중공업㈜
+2005.09	태안화력 7, 8호기 비탄방지시설공사중 철골 및 유공방진판설치공사	㈜한화건설
+2005.08	태안화력 7, 8호기 옥외소화설비 및 오폐수 처리설비 공사중 관로공사	성창기공㈜
+2005.06	태안화력 7, 8호기 회처리설비 설치공사중 ASH SILO 제작설치 공사	한라산업개발㈜
+2005.06	태안화력 7, 8호기 석탄취급설비 설치공사	삼성중공업㈜
+2005.05	태안화력 7, 8호기 소화설비 설치공사(MC-05)	㈜한화건설
+2005.04	태안화력 7, 8호기 보안시설설치공사중 울타리 설치공사	㈜한화건설
+2005.03	태안화력 7, 8호기 비탄방지시설공사중 ANCHOR FRAME 설치공사	㈜한화건설
+2004.11	태안화력 7, 8호기 건축마감공사중 잡철물설치공사(AC-03)	성창기공㈜
+2004.10	태안화력 7, 8호기 토목분 잡철물 설치공사	두산중공업㈜
+2004.10	태안화력 7, 8호기 기계설비설치공사(MC-01)	성창기공㈜
+2004.10	태안화력 7, 8호기 취수관로 축조공사중 취수관로공사(CC-05)	성창기공㈜
+2004.10	태안화력 7, 8호기 건축마감공사중 건축설비배관 설치공사(AC-03)	성창기공㈜
+2004.08	태안화력 7, 8호기 옥내기기 기초공사중 잡철물제작설치공사	㈜한화건설
+2004.07	태안화력 7, 8호기 이원도로연결공사중 회처리배관 이설공사	두산중공업㈜
+2004.07	태안화력 7, 8호기 전망대 설치공사	두산중공업㈜
+2003.04	당진화력 1~4호기 CV-08 A/B 긴급복구공사	㈜유창플랜트
+2003.04	당진화력 1~4호기 CV-08 A/B 정상복구공사	㈜유창플랜트
+2003.03	보령화력 2호기 GR FAN 및 부속설비 철거공사	㈜유창플랜트
+2002.12	당진화력 5, 6호기 취수관로 및 취수펌프장 축조공사중(기계분야)	㈜유창플랜트
+2002.09	당진화력 5, 6호기 터빈,주제어 및 보일러건물 기초공사중 잡철물공사	㈜유창플랜트
+2002.03	태안화력 5, 6호기 석고취급설비설치 공사	㈜유창플랜트
+2001.05	태안화력 5, 6호기 시운전지원 공사	㈜유창플랜트
+1999.06	태안화력 5, 6호기 석탄취급설비 공사	㈜유창플랜트
+`.trim();
+
+  /* DOM */
+  const tbody = document.getElementById("allPerfTbody");
+  const pagination = document.getElementById("allPerfPagination");
+
+  /* 설정 */
+  const PER_PAGE = 25;
+  let currentPage = 1;
+
+  /* 텍스트 -> 객체 배열 */
+  function parseTSV(tsv){
+    const lines = tsv.split("\n").map(v => v.trim()).filter(Boolean);
+
+    /* 첫 줄이 헤더면 제거 */
+    const startIdx = lines[0]?.includes("공사일자") ? 1 : 0;
+
+    const items = [];
+    for (let i = startIdx; i < lines.length; i++){
+      const cols = lines[i].split("\t");
+
+      /* 탭이 부족한 줄 방어 */
+      const date = (cols[0] ?? "").trim();
+      const title = (cols[1] ?? "").trim();
+      const client = (cols[2] ?? "").trim();
+
+      if (!date && !title && !client) continue;
+
+      items.push({ date, title, client });
+    }
+    return items;
+  }
+
+  /* 날짜 정렬(최신 -> 과거) */
+  function dateKey(dateStr){
+    /* 2024.08 형태 대응 */
+    const m = String(dateStr).match(/^(\d{4})\.(\d{1,2})/);
+    if (!m) return 0;
+    const y = Number(m[1]);
+    const mo = Number(m[2]);
+    return y * 100 + mo;
+  }
+
+  let ALL_PERFORMANCE = [
+  ...MANUAL_ITEMS,          // 최신 수동 입력
+  ...parseTSV(RAW_TSV)      // 기존 대량 데이터
+].sort((a, b) => dateKey(b.date) - dateKey(a.date));
+
+  function renderTable(page){
+    const total = ALL_PERFORMANCE.length;
+    const start = (page - 1) * PER_PAGE;
+    const end = Math.min(start + PER_PAGE, total);
+
+    tbody.innerHTML = ALL_PERFORMANCE.slice(start, end).map((item) => `
+      <tr>
+        <td>${item.date}</td>
+        <td>${item.title}</td>
+        <td>${item.client}</td>
+      </tr>
+    `).join("");
+  }
+
+  function renderPagination(page){
+    const totalPages = Math.ceil(ALL_PERFORMANCE.length / PER_PAGE);
+
+    if (totalPages <= 1){
+      pagination.innerHTML = "";
+      return;
+    }
+
+    const windowSize = 7;
+    let start = Math.max(1, page - Math.floor(windowSize / 2));
+    let end = Math.min(totalPages, start + windowSize - 1);
+    start = Math.max(1, end - windowSize + 1);
+
+    const prevDisabled = page === 1 ? "disabled" : "";
+    const nextDisabled = page === totalPages ? "disabled" : "";
+
+    let html = "";
+    html += `<a href="#" class="${prevDisabled}" data-page="${page - 1}">이전</a>`;
+
+    for (let p = start; p <= end; p++){
+      const active = p === page ? "active" : "";
+      html += `<a href="#" class="${active}" data-page="${p}">${p}</a>`;
+    }
+
+    html += `<a href="#" class="${nextDisabled}" data-page="${page + 1}">다음</a>`;
+    pagination.innerHTML = html;
+  }
+
+  pagination.addEventListener("click", (e) => {
+    const a = e.target.closest("a");
+    if (!a) return;
+    e.preventDefault();
+
+    if (a.classList.contains("disabled")) return;
+
+    const totalPages = Math.ceil(ALL_PERFORMANCE.length / PER_PAGE);
+    const page = Number(a.dataset.page);
+
+    if (page < 1 || page > totalPages) return;
+
+    currentPage = page;
+    renderTable(currentPage);
+    renderPagination(currentPage);
+
+window.scrollTo({
+  top: 0,
+  behavior: "smooth"
+});
+  });
+
+  renderTable(currentPage);
+  renderPagination(currentPage);
+</script>
+
+
+<!-- ===== 공통 푸터 삽입 영역 ===== -->
+<div id="app-footer"></div>
+
+<script src="/js/00_common.js"></script>
+</body>
+</html>

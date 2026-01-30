@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>서환 | 회사개요</title>
+
+<!-- 공통 -->
+<link rel="stylesheet" href="/css/01_common.css">
+<!-- 페이지별 -->
+<link rel="stylesheet" href="/css/02_pages.css">
+</head>
+<body>
+<!-- ===== 공통 헤더 삽입 영역 ===== -->
+<div id="app-header"></div>
+
+ <!-- ===== 메인 영역(본문 시작) ===== -->
+<main class="subpage">
+
+<!-- ===== 회사개요 상단 비주얼 ===== -->
+<section class="sub-visual sub-visual--company">
+  <div class="sub-visual-inner">
+    <h1 class="sub-visual-title">회사개요</h1>
+    <p class="sub-visual-desc">
+      서환산업의 기본 정보를 한눈에 확인하실 수 있습니다.
+    </p>
+    
+    <!-- ===== 현재 위치 경로 (Breadcrumb) ===== -->
+  <nav class="breadcrumb" aria-label="현재 위치">
+    <a href="/01_home/01_index.html" class="breadcrumb-link">홈</a>
+    <span class="breadcrumb-sep">/</span>
+
+   <!-- 회사소개 드롭다운 -->
+  <div class="breadcrumb-dropdown">
+  <a class="breadcrumb-link breadcrumb-toggle" href="/02_company/01_company_overview.html">
+    회사소개
+  </a>
+
+    <ul class="breadcrumb-menu">
+      <li><a href="/02_company/01_company_overview.html">회사개요</a></li>
+      <li><a href="/02_company/02_company_history.html">연혁</a></li>
+      <li><a href="/02_company/03_company_ceo.html">CEO 인사말</a></li>
+      <li><a href="/02_company/04_company_org.html">조직도</a></li>
+      <li><a href="/02_company/05_company_license.html">면허 및 인증서</a></li>
+      <li><a href="/02_company/06_company_location.html">찾아오시는 길</a></li>
+    </ul>
+  </div>
+    <span class="breadcrumb-sep">/</span>
+
+    <span class="breadcrumb-current">CEO 인사말</span>
+  </nav>
+  </section>
+  
+<!-- ===== CEO 인사말: 좌측 이미지 + 우측 텍스트 ===== -->
+<section class="ceo-message">
+
+  <div class="ceo-wrap">
+
+    <!-- 좌측: 대표이사 이미지 (임시) -->
+    <div class="ceo-photo">
+      <!-- 실제 이미지 넣기 전 임시 영역 -->
+      <div class="ceo-photo-placeholder">대표이사 이미지 (추후 삽입)</div>
+
+      <!-- 실제 이미지 사용 시 아래로 교체
+      <img src="img/ceo.jpg" alt="(주)서환산업 대표이사 이양환" class="ceo-photo-img">
+      -->
+    </div>
+
+    <!-- 우측: 텍스트 -->
+    <div class="ceo-text">
+
+      <!-- 슬로건 (박스 없이 큰 타이포) -->
+      <p class="ceo-title">“신뢰로 시작해, <strong>책임으로 완성합니다</strong>”</p>
+
+      <!-- 첫 인사(짧은 인트로) -->
+      <p class="ceo-intro">
+        안녕하십니까. <strong>(주)서환산업 대표이사 이양환</strong>입니다.<br>
+        저희 홈페이지를 방문해 주신 고객 여러분을 진심으로 환영합니다.
+      </p>
+
+      <!-- 본문 -->
+      <div class="ceo-content">
+        <p>1999년 창업 이래 오늘에 이르기까지, (주)서환산업에 깊은 관심과 변함없는 성원을 보내주신 고객 여러분께 진심으로 감사드립니다.</p>
+
+        <p>저희 회사는 수십 년간 축적된 경험과 기술력을 바탕으로 국내 발전소 건설 부문에서 탁월한 업무 수행 능력을 갖추고 있으며, 어떠한 환경과 조건 속에서도 <strong>완벽한 책임 시공</strong>으로 신뢰를 쌓아 왔습니다.</p>
+
+        <p>또한 기업의 이념인 <strong>‘성실’, ‘투명’, ‘정도’</strong>를 바탕으로 급변하는 경영 환경에도 유연하게 대응하며, 끊임없는 변화와 혁신을 통해 지속적이고 안정적인 성장을 이어가고 있습니다.</p>
+
+        <p>항상 보내주시는 고객 여러분의 아낌없는 관심과 성원에 다시 한 번 깊이 감사드리며, 앞으로도 <strong>고객의 가치를 최우선으로 하는 경영</strong>을 실천해 나갈 것을 약속드립니다.</p>
+
+        <p class="ceo-sign">
+          감사합니다.<br>
+          <strong>(주)서환산업 대표이사 이양환</strong>
+        </p>
+      </div>
+
+    </div>
+
+  </div>
+
+</section>
+ <!-- ===== 공통 푸터 삽입 영역 ===== -->
+<div id="app-footer"></div>
+
+<script src="/js/00_common.js"></script>
+</body>
+</html>

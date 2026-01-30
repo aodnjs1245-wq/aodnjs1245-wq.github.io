@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>서환 | 회사개요</title>
+
+<!-- 공통 -->
+<link rel="stylesheet" href="/css/01_common.css">
+<!-- 페이지별 -->
+<link rel="stylesheet" href="/css/02_pages.css">
+</head>
+<body>
+<!-- ===== 공통 헤더 삽입 영역 ===== -->
+<div id="app-header"></div>
+
+  <!-- ===== 메인 영역(본문 시작) ===== -->
+<main class="subpage">
+
+<!-- ===== 회사개요 상단 비주얼 ===== -->
+<section class="sub-visual sub-visual--company">
+  <div class="sub-visual-inner">
+    <h1 class="sub-visual-title">회사개요</h1>
+    <p class="sub-visual-desc">
+      서환산업의 기본 정보를 한눈에 확인하실 수 있습니다.
+    </p>
+    
+    <!-- ===== 현재 위치 경로 (Breadcrumb) ===== -->
+  <nav class="breadcrumb" aria-label="현재 위치">
+    <a href="/01_home/01_index.html" class="breadcrumb-link">홈</a>
+    <span class="breadcrumb-sep">/</span>
+
+    <!-- 회사소개 드롭다운 -->
+  <div class="breadcrumb-dropdown">
+  <a class="breadcrumb-link breadcrumb-toggle" href="/02_company/01_company_overview.html">
+    회사소개
+  </a>
+
+    <ul class="breadcrumb-menu">
+      <li><a href="/02_company/01_company_overview.html">회사개요</a></li>
+      <li><a href="/02_company/02_company_history.html">연혁</a></li>
+      <li><a href="/02_company/03_company_ceo.html">CEO 인사말</a></li>
+      <li><a href="/02_company/04_company_org.html">조직도</a></li>
+      <li><a href="/02_company/05_company_license.html">면허 및 인증서</a></li>
+      <li><a href="/02_company/06_company_location.html">찾아오시는 길</a></li>
+    </ul>
+  </div>
+    <span class="breadcrumb-sep">/</span>
+
+    <span class="breadcrumb-current">찾아오시는 길</span>
+  </nav>
+  </section>
+
+<!-- ===== 찾아오시는 길 ===== -->
+<section class="location-section">
+
+  <!-- ===== 상단: 지도(작게) - 카카오 지도퍼가기 ===== -->
+  <div class="location-map location-map-embed">
+
+    <!-- 지도 노드(컨테이너) -->
+    <div id="daumRoughmapContainer1769500864338"
+         class="root_daum_roughmap root_daum_roughmap_landing"></div>
+
+  </div>
+
+  <!-- ===== 상세정보 ===== -->
+  <div class="location-detail">
+    <h2 class="location-title">상세 안내</h2>
+
+    <dl class="location-dl">
+      <div class="location-row">
+        <dt>주소</dt>
+        <dd>(32134) 충남 태안군 태안읍 원이로 341</dd>
+      </div>
+
+      <div class="location-row">
+        <dt>전화</dt>
+        <dd>대표전화 : 041-674-6681&nbsp;&nbsp;&nbsp;팩스번호 : 041-674-1682</dd>
+      </div>
+
+      <div class="location-row">
+        <dt>차량</dt>
+        <dd>태안 읍내에서 차량으로 10분 거리</dd>
+      </div>
+
+      <div class="location-row">
+        <dt>버스</dt>
+        <dd>삭선4리(농공단지)정류장 하차</dd>
+      </div>
+    </dl>
+  </div>
+
+  <!-- ===== 사업장 주소 ===== -->
+  <div class="location-sites">
+    <h2 class="location-title">사업장 주소</h2>
+
+    <ul class="site-list">
+      <li class="site-item">
+        <span class="site-name">본사</span>
+        <span class="site-addr">충청남도 태안군 태안읍 원이로 341</span>
+      </li>
+
+      <li class="site-item">
+        <span class="site-name">이원호 사업소</span>
+        <span class="site-addr">충청남도 태안군 이원면 신재생로 553-201</span>
+      </li>
+
+      <li class="site-item">
+        <span class="site-name">삼양 사업소</span>
+        <span class="site-addr">충청남도 태안군 안면읍 통샘길 87-250</span>
+      </li>
+
+      <li class="site-item">
+        <span class="site-name">햇들원 사업소</span>
+        <span class="site-addr">충청남도 태안군 원북면 신재생로 122</span>
+      </li>
+    </ul>
+  </div>
+
+</section>
+<!-- ===== 공통 푸터 삽입 영역 ===== -->
+<div id="app-footer"></div>
+
+<script src="/js/00_common.js"></script>
+
+  <!-- ===== 카카오 roughmap 로더(사이트 전체 1회) ===== -->
+<script charset="UTF-8" class="daum_roughmap_loader_script"
+  src="https://ssl.daumcdn.net/dmaps/map_js_init/roughmapLoader.js"></script>
+
+<!-- ===== 카카오 roughmap 실행(컨테이너가 생긴 뒤 실행되어야 함) ===== -->
+<script charset="UTF-8">
+  /* ===== 카카오 지도 퍼가기 렌더링 ===== */
+  new daum.roughmap.Lander({
+    "timestamp": "1769500864338",
+    "key": "gq3wobfyqhb",
+    "mapWidth": "640",
+    "mapHeight": "360"
+  }).render();
+</script>
+</body>
+</html>

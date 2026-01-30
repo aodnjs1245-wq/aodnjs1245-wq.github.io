@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>공지사항 | 서환</title>
+<!-- 공통 -->
+<link rel="stylesheet" href="/css/01_common.css">
+<!-- 페이지별 -->
+<link rel="stylesheet" href="/css/02_pages.css">
+</head>
+<body>
+
+<!-- ===== 공통 헤더 삽입 영역 ===== -->
+<div id="app-header"></div>
+
+ 
+  <main class="subpage">
+
+<!-- ===== 공지사항 상단 비주얼 ===== -->
+<section class="sub-visual sub-visual--company">
+  <div class="sub-visual-inner">
+    <h1 class="sub-visual-title">공지사항</h1>
+    <p class="sub-visual-desc">
+      서환의 새로운 소식과 공지 내용을 안내드립니다.
+    </p>
+    </section>
+
+    <!-- 검색 영역 -->
+    <section class="notice-search">
+      <input type="text" placeholder="검색어를 입력하세요">
+      <button>검색</button>
+    </section>
+
+    <!-- 공지 목록 -->
+    <section class="notice-list">
+
+      <!-- 공지 1 -->
+      <div class="notice-item">
+        <div class="notice-title">
+          <a href="/05_notice/05_notice_view.html">서환 홈페이지 리뉴얼 안내</a>
+        </div>
+        <div class="notice-date">2026-01-30</div>
+      </div>
+
+    </section>
+    <!-- 페이지 번호 -->
+    
+<!-- #은 페이지 넘기기 누르면 위로 올라가기 때문에 잠시 주석처리
+   <div class="pagination">
+  <a href="#">«</a>
+  <a href="#" class="active">1</a>
+  <a href="#">»</a>
+</div>
+-->
+<div class="pagination">
+  <span class="disabled">«</span>
+  <a href="#" class="active">1</a>
+  <span class="disabled">»</span>
+</div>
+
+  </main>
+
+<!-- ===== 공통 푸터 삽입 영역 ===== -->
+<div id="app-footer"></div>
+
+<script src="/js/00_common.js"></script>
+</body>
+</html>
