@@ -278,12 +278,11 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 /* =========================
    Supabase Client (공지 테스트용)
+   - 중복 실행되어도 에러 없이 1번만 생성
 ========================= */
-
-const SUPABASE_URL = "https://yhakzowipdzazebswmgx.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InloYWt6b3dpcGR6YXplYnN3bWd4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk3NDMyMDUsImV4cCI6MjA4NTMxOTIwNX0.Id3Lfhzpz9FG8jA7b9xkKXrfiZXu2VvvOX7JDpgdrgw";
-
-const supabaseClient = supabase.createClient(
-  SUPABASE_URL,
-  SUPABASE_ANON_KEY
-);
+if (!window.supabaseClient) {
+  window.supabaseClient = supabase.createClient(
+    "https://yhakzowipdzazebswmgx.supabase.co",
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInloYWt6b3dpcGR6YXplYnN3bWd4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk3NDMyMDUsImV4cCI6MjA4NTMxOTIwNX0.Id3Lfhzpz9FG8jA7b9xkKXrfiZXu2VvvOX7JDpgdrgw"
+  );
+}
