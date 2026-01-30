@@ -4,15 +4,21 @@
 ========================= */
 
 /* =========================
-   유틸: 터치 디바이스 판별(실기기 오판 방지)
+   유틸: 터치/모바일 판별(실기기 오판 방지)
 ========================= */
 function isTouchDevice(){
-  return (
+  const hasTouch =
     ("ontouchstart" in window) ||
-    (navigator.maxTouchPoints && navigator.maxTouchPoints > 0) ||
-    window.matchMedia("(pointer: coarse)").matches
-  );
+    (navigator.maxTouchPoints && navigator.maxTouchPoints > 0);
+
+  const coarse = window.matchMedia("(pointer: coarse)").matches;
+
+  /* 화면폭도 함께 사용(모바일/태블릿에서 확실히 잡기) */
+  const smallScreen = window.matchMedia("(max-width: 1024px)").matches;
+
+  return hasTouch || coarse || smallScreen;
 }
+
 
 /* =========================
    공통 include
@@ -104,8 +110,19 @@ function bindBreadcrumbTouch() {
 
 /* =========================
    GNB: 모바일 1탭=열기 / 2탭=이동
+   - pointerdown에서 열고, 이어지는 click 이동도 확실히 차단
 ========================= */
 function bindGnbTouch() {
+
+  /* 첫 탭에서 이동 막아야 하는 링크를 잠깐 표시 */
+  function markBlock(linkEl){
+    linkEl.dataset.blockOnce = "1";
+    window.setTimeout(() => {
+      delete linkEl.dataset.blockOnce;
+    }, 700);
+  }
+
+  /* 1) pointerdown: 첫 탭이면 메뉴 열기 */
   document.addEventListener("pointerdown", (e) => {
     if (!isTouchDevice()) return;
 
@@ -121,9 +138,12 @@ function bindGnbTouch() {
     const subMenu = gnbItem.querySelector(".sub-menu");
     if (!subMenu || !gnbLink) return;
 
+    /* 이미 열려있으면 2번째 탭은 이동 허용 */
     if (gnbItem.classList.contains("is-open")) return;
 
+    /* 첫 탭: 이동 막고 열기 */
     e.preventDefault();
+    markBlock(gnbLink);
 
     document.querySelectorAll(".gnb-item.is-open").forEach((el) => {
       if (el !== gnbItem) el.classList.remove("is-open");
@@ -132,6 +152,21 @@ function bindGnbTouch() {
     gnbItem.classList.add("is-open");
   }, { capture: true });
 
+  /* 2) click: 일부 기기에서 pointerdown preventDefault가 이동을 못 막는 경우가 있어 1회 차단 */
+  document.addEventListener("click", (e) => {
+    if (!isTouchDevice()) return;
+
+    const gnbLink = e.target.closest(".gnb-link");
+    if (!gnbLink) return;
+
+    if (gnbLink.dataset.blockOnce === "1") {
+      e.preventDefault();
+      e.stopPropagation();
+      delete gnbLink.dataset.blockOnce;
+    }
+  }, { capture: true });
+
+  /* 3) 하위메뉴 탭하면 닫기 */
   document.addEventListener("pointerdown", (e) => {
     if (!isTouchDevice()) return;
 
