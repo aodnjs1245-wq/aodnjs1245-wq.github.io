@@ -80,81 +80,112 @@ function setActiveGnb() {
 }
 
 /* =========================
-   breadcrumb: 모바일 1탭=열기 / 2탭=이동
+   breadcrumb: 모바일 1탭=열기 / 2탭=이동 (삼성인터넷 안정화)
 ========================= */
 function bindBreadcrumbTouch() {
-  document.addEventListener("pointerdown", (e) => {
+
+  function closeAll(){
+    document.querySelectorAll(".breadcrumb-dropdown.is-open")
+      .forEach((el) => el.classList.remove("is-open"));
+  }
+
+  function openDrop(dropdown){
+    document.querySelectorAll(".breadcrumb-dropdown.is-open")
+      .forEach((el) => {
+        if (el !== dropdown) el.classList.remove("is-open");
+      });
+
+    dropdown.classList.add("is-open");
+  }
+
+  /* 1) 첫 탭을 touchstart에서 막기 */
+  document.addEventListener("touchstart", (e) => {
     if (!isTouchDevice()) return;
 
     const toggleLink = e.target.closest(".breadcrumb-toggle");
     const dropdown = e.target.closest(".breadcrumb-dropdown");
 
+    /* 드롭다운 밖 터치하면 닫기 */
     if (!dropdown) {
-      document.querySelectorAll(".breadcrumb-dropdown.is-open")
-        .forEach((el) => el.classList.remove("is-open"));
+      closeAll();
       return;
     }
 
-    if (toggleLink) {
-      if (dropdown.classList.contains("is-open")) return;
+    /* 토글 눌렀을 때만 제어 */
+    if (!toggleLink) return;
 
+    /* 이미 열려있으면 2번째 탭은 이동 허용 */
+    if (dropdown.classList.contains("is-open")) return;
+
+    /* 첫 탭: 이동 막고 열기 */
+    e.preventDefault();
+    toggleLink.dataset.blockOnce = "1"; /* 이어지는 click 1회 차단 */
+    openDrop(dropdown);
+
+  }, { capture: true, passive: false });
+
+  /* 2) click 이동도 1회 차단(삼성인터넷 보험) */
+  document.addEventListener("click", (e) => {
+    if (!isTouchDevice()) return;
+
+    const toggleLink = e.target.closest(".breadcrumb-toggle");
+    if (!toggleLink) return;
+
+    if (toggleLink.dataset.blockOnce === "1") {
       e.preventDefault();
-
-      document.querySelectorAll(".breadcrumb-dropdown.is-open")
-        .forEach((el) => el.classList.remove("is-open"));
-
-      dropdown.classList.add("is-open");
+      e.stopPropagation();
+      delete toggleLink.dataset.blockOnce;
     }
   }, { capture: true });
 }
 
 /* =========================
-   GNB: 모바일 1탭=열기 / 2탭=이동
-   - pointerdown에서 열고, 이어지는 click 이동도 확실히 차단
+   GNB: 모바일 1탭=열기 / 2탭=이동 (삼성인터넷/사파리 안정화)
 ========================= */
 function bindGnbTouch() {
-
-  /* 첫 탭에서 이동 막아야 하는 링크를 잠깐 표시 */
-  function markBlock(linkEl){
-    linkEl.dataset.blockOnce = "1";
-    window.setTimeout(() => {
-      delete linkEl.dataset.blockOnce;
-    }, 700);
+  function isMobileMenuMode(){
+    return isTouchDevice();
   }
 
-  /* 1) pointerdown: 첫 탭이면 메뉴 열기 */
-  document.addEventListener("pointerdown", (e) => {
-    if (!isTouchDevice()) return;
+  function closeAll(){
+    document.querySelectorAll(".gnb-item.is-open")
+      .forEach((el) => el.classList.remove("is-open"));
+  }
+
+  function openItem(gnbItem){
+    document.querySelectorAll(".gnb-item.is-open").forEach((el) => {
+      if (el !== gnbItem) el.classList.remove("is-open");
+    });
+    gnbItem.classList.add("is-open");
+  }
+
+  /* 1) 터치 시작에서 먼저 잡기 (passive:false 중요) */
+  document.addEventListener("touchstart", (e) => {
+    if (!isMobileMenuMode()) return;
 
     const gnbLink = e.target.closest(".gnb-link");
     const gnbItem = e.target.closest(".gnb-item");
 
     if (!gnbItem) {
-      document.querySelectorAll(".gnb-item.is-open")
-        .forEach((el) => el.classList.remove("is-open"));
+      closeAll();
       return;
     }
 
     const subMenu = gnbItem.querySelector(".sub-menu");
     if (!subMenu || !gnbLink) return;
 
-    /* 이미 열려있으면 2번째 탭은 이동 허용 */
+    /* 열려있으면 2번째 탭은 이동 허용 */
     if (gnbItem.classList.contains("is-open")) return;
 
     /* 첫 탭: 이동 막고 열기 */
     e.preventDefault();
-    markBlock(gnbLink);
+    gnbLink.dataset.blockOnce = "1"; /* 이어지는 click 1회 차단용 */
+    openItem(gnbItem);
+  }, { capture: true, passive: false });
 
-    document.querySelectorAll(".gnb-item.is-open").forEach((el) => {
-      if (el !== gnbItem) el.classList.remove("is-open");
-    });
-
-    gnbItem.classList.add("is-open");
-  }, { capture: true });
-
-  /* 2) click: 일부 기기에서 pointerdown preventDefault가 이동을 못 막는 경우가 있어 1회 차단 */
+  /* 2) click에서도 1회 차단 (삼성인터넷/사파리 보험) */
   document.addEventListener("click", (e) => {
-    if (!isTouchDevice()) return;
+    if (!isMobileMenuMode()) return;
 
     const gnbLink = e.target.closest(".gnb-link");
     if (!gnbLink) return;
@@ -166,13 +197,12 @@ function bindGnbTouch() {
     }
   }, { capture: true });
 
-  /* 3) 하위메뉴 탭하면 닫기 */
-  document.addEventListener("pointerdown", (e) => {
-    if (!isTouchDevice()) return;
+  /* 3) 하위메뉴 누르면 닫기 */
+  document.addEventListener("click", (e) => {
+    if (!isMobileMenuMode()) return;
 
     if (e.target.closest(".sub-menu a")) {
-      document.querySelectorAll(".gnb-item.is-open")
-        .forEach((el) => el.classList.remove("is-open"));
+      closeAll();
     }
   }, { capture: true });
 }
