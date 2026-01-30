@@ -287,3 +287,15 @@ const supabaseClient = supabase.createClient(
   SUPABASE_URL,
   SUPABASE_ANON_KEY
 );
+
+/* =========================
+   Supabase Client 설정
+========================= */
+
+const SUPABASE_URL = "https://yhakzowipdzazebswmgx.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InloYWt6b3dpcGR6YXplYnN3bWd4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk3NDMyMDUsImV4cCI6MjA4NTMxOTIwNX0.Id3Lfhzpz9FG8jA7b9xkKXrfiZXu2VvvOX7JDpgdrgw";
+
+window.supabaseClient = supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_ANON_KEY
+);
