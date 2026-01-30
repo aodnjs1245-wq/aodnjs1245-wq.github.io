@@ -32,27 +32,18 @@
       <button>검색</button>
     </section>
 
-    <!-- 공지 목록 -->
-    <section class="notice-list">
+  <!-- 공지 목록 -->
+    <section class="notice-list" id="noticeList"></section>
 
-      <!-- 공지 1 -->
-      <div class="notice-item">
-        <div class="notice-title">
-          <a href="/05_notice/05_notice_view.html">서환 홈페이지 리뉴얼 안내</a>
-        </div>
-        <div class="notice-date">2026-01-30</div>
-      </div>
-
-    </section>
     <!-- 페이지 번호 -->
     
-<!-- #은 페이지 넘기기 누르면 위로 올라가기 때문에 잠시 주석처리
-   <div class="pagination">
+    <!-- #은 페이지 넘기기 누르면 위로 올라가기 때문에 잠시 주석처리
+    <div class="pagination">
   <a href="#">«</a>
   <a href="#" class="active">1</a>
   <a href="#">»</a>
-</div>
--->
+    </div>
+        -->
 <div class="pagination">
   <span class="disabled">«</span>
   <a href="#" class="active">1</a>
@@ -69,11 +60,54 @@
 <script src="/js/00_common.js"></script>
 
 <script>
-/* Supabase 연결 확인 */
-window.supabaseClient
-  .from("notices")
-  .select("*")
-  .then(res => console.log("공지 데이터:", res));
+/* =========================
+   공지 목록 렌더
+========================= */
+function formatDate(iso){
+  const d = new Date(iso);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+document.addEventListener("DOMContentLoaded", async () => {
+  const listEl = document.getElementById("noticeList");
+  if (!listEl) return;
+
+  const { data, error } = await window.supabaseClient
+    .from("notices")
+    .select("id, title, created_at")
+    .order("id", { ascending: false });
+
+  if (error){
+    console.error(error);
+    listEl.innerHTML = `
+      <div class="notice-item">
+        <div class="notice-title">공지사항을 불러오지 못했습니다.</div>
+      </div>
+    `;
+    return;
+  }
+
+  if (!data || data.length === 0){
+    listEl.innerHTML = `
+      <div class="notice-item">
+        <div class="notice-title">등록된 공지사항이 없습니다.</div>
+      </div>
+    `;
+    return;
+  }
+
+  listEl.innerHTML = data.map(row => `
+    <div class="notice-item">
+      <div class="notice-title">
+        <a href="/05_notice/05_notice_view.html?id=${row.id}">${row.title}</a>
+      </div>
+      <div class="notice-date">${formatDate(row.created_at)}</div>
+    </div>
+  `).join("");
+});
 </script>
 </body>
 </html>
