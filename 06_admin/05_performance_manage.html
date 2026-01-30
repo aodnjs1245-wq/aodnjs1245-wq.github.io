@@ -4,7 +4,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>서환산업 | 전체 사업실적 관리</title>
+    <link rel="icon" href="/assets/images/00_common/logo_top.svg" type="image/svg+xml">
+    <title>서환산업 | 실적 목록 관리</title>
 
     <!-- 공통/페이지 스타일 -->
     <link rel="stylesheet" href="/css/01_common.css">
@@ -19,7 +20,7 @@
 
             <div class="admin-card__head">
                 <h1 class="admin-card__title">전체 사업실적 관리</h1>
-                <p class="admin-card__desc">실적 추가/수정/삭제는 관리자만 가능합니다.</p>
+                <p class="admin-card__desc">실적 수정/삭제는 관리자만 가능합니다.</p>
             </div>
 
             <div class="admin-card__body">
@@ -27,34 +28,34 @@
                 <!-- 상단 버튼 -->
                 <div class="admin-actions" style="justify-content:flex-end;">
                     <a class="admin-btn admin-btn--ghost" href="/06_admin/03_admin_home.html">관리자 홈</a>
-                    <button class="admin-btn admin-btn--danger" id="adminLogoutBtn" type="button">로그아웃</button>
+                    <a class="admin-btn admin-btn--primary" href="/06_admin/06_performance_write.html">새 실적 작성</a>
                 </div>
 
-                <!-- 입력 폼(추가/수정 겸용) -->
-                <div class="admin-panel" style="margin-top:14px;">
-                    <h2 class="admin-panel__title">실적 입력</h2>
+                <!-- 수정 패널(숨김/표시) -->
+                <div class="admin-panel" id="editPanel" style="display:none; margin-top:14px;">
+                    <h2 class="admin-panel__title">실적 수정</h2>
 
-                    <form id="perfForm" style="margin-top:12px;">
-                        <input type="hidden" id="perfId">
+                    <form id="editForm" style="margin-top:12px;">
+                        <input type="hidden" id="editId">
 
                         <div class="admin-field">
-                            <label class="admin-label" for="workDate">공사일자</label>
-                            <input class="admin-input" id="workDate" type="text" placeholder="예) 2024.08">
+                            <label class="admin-label" for="editWorkDate">공사일자</label>
+                            <input class="admin-input" id="editWorkDate" type="text" placeholder="예) 2024.08">
                         </div>
 
                         <div class="admin-field">
-                            <label class="admin-label" for="workTitle">공사명</label>
-                            <input class="admin-input" id="workTitle" type="text" placeholder="공사명을 입력하세요">
+                            <label class="admin-label" for="editWorkTitle">공사명</label>
+                            <input class="admin-input" id="editWorkTitle" type="text" placeholder="공사명을 입력하세요">
                         </div>
 
                         <div class="admin-field">
-                            <label class="admin-label" for="client">발주처</label>
-                            <input class="admin-input" id="client" type="text" placeholder="발주처를 입력하세요">
+                            <label class="admin-label" for="editClient">발주처</label>
+                            <input class="admin-input" id="editClient" type="text" placeholder="발주처를 입력하세요">
                         </div>
 
                         <div class="admin-actions" style="justify-content:flex-end;">
-                            <button class="admin-btn admin-btn--ghost" type="button" id="btnReset">초기화</button>
-                            <button class="admin-btn admin-btn--primary" type="submit">저장</button>
+                            <button class="admin-btn admin-btn--ghost" type="button" id="btnCancelEdit">취소</button>
+                            <button class="admin-btn admin-btn--primary" type="submit">수정 저장</button>
                         </div>
                     </form>
                 </div>
@@ -62,21 +63,22 @@
                 <!-- 목록 -->
                 <div class="admin-panel" style="margin-top:14px;">
                     <h2 class="admin-panel__title">실적 목록</h2>
-                    <p class="admin-panel__text">행의 “수정”을 누르면 위 입력폼에 값이 채워집니다.</p>
+                    <p class="admin-panel__text">수정/삭제 후 전체 사업실적 페이지에 자동 반영됩니다.</p>
 
-                    <div style="overflow:auto; margin-top:12px;">
-                        <table style="width:100%; border-collapse:collapse; min-width:760px;">
+                    <div class="admin-table-wrap" style="margin-top:12px;">
+                        <table class="admin-table">
                             <thead>
                                 <tr style="background:#1f2a44; color:#fff;">
                                     <th style="padding:12px; text-align:center;">공사일자</th>
-                                    <th style="padding:12px; text-align:left;">공사명</th>
+                                    <th style="padding:12px; text-align:center;">공사명</th>
                                     <th style="padding:12px; text-align:center;">발주처</th>
-                                    <th style="padding:12px; text-align:center; width:160px;">관리</th>
+                                    <th style="padding:12px; text-align:center; width:170px;">관리</th>
                                 </tr>
                             </thead>
                             <tbody id="perfList"></tbody>
                         </table>
                     </div>
+                    <div id="perfPagination" class="pagination"></div>
                 </div>
 
                 <p class="admin-note">
@@ -91,6 +93,13 @@
     <script src="/js/01_supabase.js"></script>
 
     <script>
+
+        /* =========================
+   페이지네이션 설정
+========================= */
+        const PER_PAGE = 25;
+        let currentPage = 1;
+        let totalPages = 1;
         /* =========================
            로그인 체크
         ========================= */
@@ -116,25 +125,70 @@
         }
 
         /* =========================
-           목록 로드
+           날짜키(YYYY.MM -> YYYYMM)
         ========================= */
-        async function loadPerformances() {
-            const tbody = document.getElementById("perfList");
+        function toSortKey(workDate) {
+            const m = String(workDate || "").match(/^(\d{4})\.(\d{1,2})/);
+            if (!m) return null;
+            const y = Number(m[1]);
+            const mo = Number(m[2]);
+            if (!y || !mo) return null;
+            return y * 100 + mo;
+        }
 
-            const { data, error } = await window.supabaseClient
+        /* =========================
+           수정 패널 열기/닫기
+        ========================= */
+        function openEdit(row) {
+            document.getElementById("editPanel").style.display = "block";
+            document.getElementById("editId").value = row.id;
+            document.getElementById("editWorkDate").value = row.work_date || "";
+            document.getElementById("editWorkTitle").value = row.work_title || "";
+            document.getElementById("editClient").value = row.client || "";
+            window.scrollTo({ top: 0, behavior: "smooth" });
+        }
+
+        function closeEdit() {
+            document.getElementById("editPanel").style.display = "none";
+            document.getElementById("editId").value = "";
+            document.getElementById("editWorkDate").value = "";
+            document.getElementById("editWorkTitle").value = "";
+            document.getElementById("editClient").value = "";
+        }
+
+        /* =========================
+   목록 로드(25개씩)
+   - 최신이 위로: sort_key DESC, created_at DESC
+========================= */
+        async function loadPerformances(page = 1) {
+            const tbody = document.getElementById("perfList");
+            const pagination = document.getElementById("perfPagination");
+
+            currentPage = page;
+
+            const from = (page - 1) * PER_PAGE;
+            const to = from + PER_PAGE - 1;
+
+            const { data, error, count } = await window.supabaseClient
                 .from("performance_all")
-                .select("id, work_date, work_title, client")
-                .order("work_date", { ascending: false })
-                .order("id", { ascending: false });
+                .select("id, work_date, work_title, client, sort_key, created_at", { count: "exact" })
+                .order("sort_key", { ascending: false })
+                .order("created_at", { ascending: false })
+                .range(from, to);
 
             if (error) {
                 console.error(error);
                 tbody.innerHTML = `<tr><td colspan="4" style="padding:12px; text-align:center;">목록을 불러오지 못했습니다.</td></tr>`;
+                if (pagination) pagination.innerHTML = "";
                 return;
             }
 
+            const totalCount = count ?? 0;
+            totalPages = Math.max(1, Math.ceil(totalCount / PER_PAGE));
+
             if (!data || data.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="4" style="padding:12px; text-align:center;">등록된 실적이 없습니다.</td></tr>`;
+                if (pagination) pagination.innerHTML = "";
                 return;
             }
 
@@ -149,50 +203,101 @@
       </td>
     </tr>
   `).join("");
+
+            renderPerfPagination();
+        }
+        /* =========================
+           페이지네이션 렌더
+        ========================= */
+        function renderPerfPagination() {
+            const el = document.getElementById("perfPagination");
+            if (!el) return;
+
+            if (totalPages <= 1) {
+                el.innerHTML = "";
+                return;
+            }
+
+            const windowSize = 7;
+            let start = Math.max(1, currentPage - Math.floor(windowSize / 2));
+            let end = Math.min(totalPages, start + windowSize - 1);
+            start = Math.max(1, end - windowSize + 1);
+
+            const prevDisabled = currentPage === 1 ? "disabled" : "";
+            const nextDisabled = currentPage === totalPages ? "disabled" : "";
+
+            let html = "";
+            html += `<a href="#" class="${prevDisabled}" data-page="${currentPage - 1}">이전</a>`;
+
+            for (let p = start; p <= end; p++) {
+                const active = p === currentPage ? "active" : "";
+                html += `<a href="#" class="${active}" data-page="${p}">${p}</a>`;
+            }
+
+            html += `<a href="#" class="${nextDisabled}" data-page="${currentPage + 1}">다음</a>`;
+            el.innerHTML = html;
         }
 
         /* =========================
-           저장(추가/수정)
+           페이지네이션 클릭
         ========================= */
-        async function savePerformance(e) {
+        function bindPerfPagination() {
+            const el = document.getElementById("perfPagination");
+            if (!el) return;
+
+            el.addEventListener("click", (e) => {
+                const a = e.target.closest("a");
+                if (!a) return;
+                e.preventDefault();
+
+                if (a.classList.contains("disabled")) return;
+
+                const page = Number(a.dataset.page);
+                if (!page || page < 1 || page > totalPages) return;
+
+                loadPerformances(page);
+                window.scrollTo({ top: 0, behavior: "smooth" });
+            });
+        }
+        /* =========================
+           수정 저장
+        ========================= */
+        async function saveEdit(e) {
             e.preventDefault();
 
-            const id = document.getElementById("perfId").value.trim();
-            const work_date = document.getElementById("workDate").value.trim();
-            const work_title = document.getElementById("workTitle").value.trim();
-            const client = document.getElementById("client").value.trim();
+            const id = Number(document.getElementById("editId").value);
+            const work_date = document.getElementById("editWorkDate").value.trim();
+            const work_title = document.getElementById("editWorkTitle").value.trim();
+            const client = document.getElementById("editClient").value.trim();
 
-            if (!work_date || !work_title || !client) {
+            if (!id || !work_date || !work_title || !client) {
                 alert("공사일자/공사명/발주처를 모두 입력해주세요.");
                 return;
             }
 
+            const sort_key = toSortKey(work_date);
+
             const payload = { work_date, work_title, client };
+            if (sort_key) payload.sort_key = sort_key;
 
-            let res;
-            if (id) {
-                res = await window.supabaseClient
-                    .from("performance_all")
-                    .update(payload)
-                    .eq("id", Number(id));
-            } else {
-                res = await window.supabaseClient
-                    .from("performance_all")
-                    .insert(payload);
-            }
+            const { error } = await window.supabaseClient
+                .from("performance_all")
+                .update(payload)
+                .eq("id", id);
 
-            if (res.error) {
-                console.error(res.error);
-                alert("저장 실패: 권한(RLS) 또는 입력값을 확인해주세요.");
+            if (error) {
+                console.error(error);
+                alert("수정 실패: 권한(RLS) 또는 입력값을 확인해주세요.");
                 return;
             }
 
-            resetForm();
-            loadPerformances();
+            alert("수정 완료");
+            closeEdit();
+            loadPerformances(currentPage);
         }
 
         /* =========================
-           수정/삭제 클릭 처리
+           목록 이벤트(수정/삭제)
         ========================= */
         function bindTableActions() {
             const tbody = document.getElementById("perfList");
@@ -201,27 +306,35 @@
                 const tr = e.target.closest("tr");
                 if (!tr) return;
 
-                const id = tr.dataset.id;
+                const id = Number(tr.dataset.id);
 
                 /* 수정 */
                 if (e.target.classList.contains("btnEdit")) {
-                    document.getElementById("perfId").value = id;
-                    document.getElementById("workDate").value = tr.children[0].textContent.trim();
-                    document.getElementById("workTitle").value = tr.children[1].textContent.trim();
-                    document.getElementById("client").value = tr.children[2].textContent.trim();
-                    window.scrollTo({ top: 0, behavior: "smooth" });
+                    const { data, error } = await window.supabaseClient
+                        .from("performance_all")
+                        .select("id, work_date, work_title, client")
+                        .eq("id", id)
+                        .single();
+
+                    if (error || !data) {
+                        alert("수정 데이터를 불러오지 못했습니다.");
+                        console.error(error);
+                        return;
+                    }
+
+                    openEdit(data);
                     return;
                 }
 
                 /* 삭제 */
                 if (e.target.classList.contains("btnDel")) {
-                    const ok = confirm("정말 삭제할까요?");
+                    const ok = confirm("정말 삭제할까요? 삭제하면 되돌릴 수 없습니다.");
                     if (!ok) return;
 
                     const { error } = await window.supabaseClient
                         .from("performance_all")
                         .delete()
-                        .eq("id", Number(id));
+                        .eq("id", id);
 
                     if (error) {
                         console.error(error);
@@ -229,20 +342,16 @@
                         return;
                     }
 
-                    resetForm();
-                    loadPerformances();
+                    alert("삭제 완료");
+                    closeEdit();
+
+                    /* 마지막 페이지에서 마지막 항목 삭제 시, 빈 페이지 방지 */
+                    const nextPage =
+                        (currentPage > 1 && currentPage === totalPages) ? currentPage - 1 : currentPage;
+
+                    loadPerformances(nextPage);
                 }
             });
-        }
-
-        /* =========================
-           폼 초기화
-        ========================= */
-        function resetForm() {
-            document.getElementById("perfId").value = "";
-            document.getElementById("workDate").value = "";
-            document.getElementById("workTitle").value = "";
-            document.getElementById("client").value = "";
         }
 
         /* =========================
@@ -252,16 +361,12 @@
             const ok = await requireAdmin();
             if (!ok) return;
 
-            document.getElementById("perfForm").addEventListener("submit", savePerformance);
-            document.getElementById("btnReset").addEventListener("click", resetForm);
-
-            document.getElementById("adminLogoutBtn").addEventListener("click", async () => {
-                await window.supabaseClient.auth.signOut();
-                location.href = "/06_admin/01_admin_login.html";
-            });
+            document.getElementById("btnCancelEdit").addEventListener("click", closeEdit);
+            document.getElementById("editForm").addEventListener("submit", saveEdit);
 
             bindTableActions();
-            loadPerformances();
+            bindPerfPagination();   /* 이거 추가 */
+            loadPerformances(1);
         });
     </script>
 </body>

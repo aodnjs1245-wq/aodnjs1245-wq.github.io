@@ -2,51 +2,52 @@
    관리자 페이지 전용 스타일
 ========================= */
 
-.admin-wrap{
+.admin-wrap {
+  max-width: 1200px;
   min-height: calc(100vh - 120px);
   padding: 40px 20px 80px;
   background: #f3f4f6;
 }
 
-.admin-card{
-  max-width: 720px;
+.admin-card {
+  max-width: 920px;
   margin: 0 auto;
   background: #ffffff;
   border: 1px solid #e5e7eb;
   border-radius: 14px;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
   overflow: hidden;
 }
 
-.admin-card__head{
+.admin-card__head {
   padding: 18px 20px;
   border-bottom: 1px solid #e5e7eb;
   background: #1f2a44;
   color: #ffffff;
 }
 
-.admin-card__title{
+.admin-card__title {
   margin: 0;
   font-size: 18px;
   font-weight: 700;
   letter-spacing: -0.2px;
 }
 
-.admin-card__desc{
+.admin-card__desc {
   margin: 6px 0 0;
   font-size: 13px;
-  color: rgba(255,255,255,0.85);
+  color: rgba(255, 255, 255, 0.85);
 }
 
-.admin-card__body{
+.admin-card__body {
   padding: 22px 20px 24px;
 }
 
-.admin-field{
+.admin-field {
   margin-bottom: 14px;
 }
 
-.admin-label{
+.admin-label {
   display: block;
   font-size: 13px;
   color: #374151;
@@ -55,7 +56,7 @@
 }
 
 .admin-input,
-.admin-textarea{
+.admin-textarea {
   width: 100%;
   padding: 12px 12px;
   border: 1px solid #e5e7eb;
@@ -67,25 +68,25 @@
 }
 
 .admin-input:focus,
-.admin-textarea:focus{
+.admin-textarea:focus {
   border-color: #1f2a44;
-  box-shadow: 0 0 0 3px rgba(31,42,68,0.12);
+  box-shadow: 0 0 0 3px rgba(31, 42, 68, 0.12);
 }
 
-.admin-textarea{
+.admin-textarea {
   min-height: 220px;
   resize: vertical;
   line-height: 1.7;
 }
 
-.admin-actions{
+.admin-actions {
   display: flex;
   gap: 10px;
   margin-top: 16px;
   flex-wrap: wrap;
 }
 
-.admin-btn{
+.admin-btn {
   border: 0;
   cursor: pointer;
   padding: 12px 14px;
@@ -98,56 +99,105 @@
   justify-content: center;
 }
 
-.admin-btn--primary{
+.admin-btn--primary {
   background: #1f2a44;
   color: #ffffff;
 }
 
-.admin-btn--primary:hover{
+.admin-btn--primary:hover {
   filter: brightness(0.95);
 }
 
-.admin-btn--ghost{
+.admin-btn--ghost {
   background: #ffffff;
   color: #374151;
   border: 1px solid #e5e7eb;
 }
 
-.admin-btn--danger{
+.admin-btn--danger {
   background: #111827;
   color: #ffffff;
 }
 
-.admin-note{
+.admin-note {
   margin-top: 12px;
   font-size: 12px;
   color: #6b7280;
   line-height: 1.6;
 }
 
-.admin-grid{
+.admin-grid {
   display: grid;
   grid-template-columns: 1fr;
   gap: 14px;
 }
 
-.admin-panel{
+.admin-panel {
   border: 1px solid #e5e7eb;
   border-radius: 12px;
   padding: 16px;
   background: #ffffff;
 }
 
-.admin-panel__title{
+.admin-panel__title {
   margin: 0 0 8px;
   font-size: 14px;
   font-weight: 800;
   color: #374151;
 }
 
-.admin-panel__text{
+.admin-panel__text {
   margin: 0;
   font-size: 13px;
   color: #6b7280;
   line-height: 1.6;
+}
+
+/* =========================
+   관리자 테이블 래퍼(라운드 + 스크롤)
+========================= */
+.admin-table-wrap {
+  overflow: auto;
+  border-radius: 12px;
+  /* 상단 라운드 포함 */
+  border: 1px solid #e5e7eb;
+  /* 구분선 */
+  background: #ffffff;
+}
+
+/* 테이블이 래퍼 끝까지 채우게 */
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 760px;
+}
+
+/* =========================
+   공사일자: 줄바꿈 방지
+========================= */
+.admin-table th,
+.admin-table td {
+  white-space: nowrap;
+  /* 기본적으로 한 줄 */
+}
+
+/* 1열(공사일자) 폭 확보 */
+.admin-table th:nth-child(1),
+.admin-table td:nth-child(1) {
+  width: 110px;
+}
+
+/* 공사명(2열)은 길어서 줄바꿈 허용 */
+.admin-table th:nth-child(2),
+.admin-table td:nth-child(2) {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+/* =========================
+   관리자 실적 목록: 페이지네이션 위 여백
+========================= */
+.admin-panel .pagination {
+  margin-top: 32px;
+  /* 카드 아래쪽 여백 */
 }

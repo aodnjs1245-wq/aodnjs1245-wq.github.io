@@ -1,8 +1,10 @@
 <!DOCTYPE html>
 <html lang="ko">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" href="/assets/images/00_common/logo_top.svg" type="image/svg+xml"> <!-- favicon -->
   <title>서환산업 | 관리자 로그인</title>
 
   <!-- 공통 -->
@@ -11,6 +13,7 @@
   <!-- 관리자 -->
   <link rel="stylesheet" href="/css/03_admin.css">
 </head>
+
 <body>
 
   <main class="admin-wrap">
@@ -24,12 +27,14 @@
         <form id="adminLoginForm">
           <div class="admin-field">
             <label class="admin-label" for="adminEmail">이메일</label>
-            <input class="admin-input" id="adminEmail" type="email" autocomplete="username" placeholder="admin@example.com">
+            <input class="admin-input" id="adminEmail" type="email" autocomplete="username"
+              placeholder="admin@example.com">
           </div>
 
           <div class="admin-field">
             <label class="admin-label" for="adminPassword">비밀번호</label>
-            <input class="admin-input" id="adminPassword" type="password" autocomplete="current-password" placeholder="비밀번호를 입력하세요">
+            <input class="admin-input" id="adminPassword" type="password" autocomplete="current-password"
+              placeholder="비밀번호를 입력하세요">
           </div>
 
           <div class="admin-actions">
@@ -47,39 +52,40 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="/js/01_supabase.js"></script>
-  
+
   <script>
-  /* =========================
-     관리자 로그인
-  ========================= */
-  document.addEventListener("DOMContentLoaded", async () => {
-    const { data: { session } } = await window.supabaseClient.auth.getSession();
-    if (session) {
-      location.href = "/06_admin/03_admin_home.html";
-      return;
-    }
-
-    const form = document.getElementById("adminLoginForm");
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
-
-      const email = document.getElementById("adminEmail").value.trim();
-      const password = document.getElementById("adminPassword").value;
-
-      if (!email || !password) {
-        alert("이메일/비밀번호를 입력해주세요.");
+    /* =========================
+       관리자 로그인
+    ========================= */
+    document.addEventListener("DOMContentLoaded", async () => {
+      const { data: { session } } = await window.supabaseClient.auth.getSession();
+      if (session) {
+        location.href = "/06_admin/03_admin_home.html";
         return;
       }
 
-      const { error } = await window.supabaseClient.auth.signInWithPassword({ email, password });
-      if (error) {
-        alert("로그인 실패: " + error.message);
-        return;
-      }
+      const form = document.getElementById("adminLoginForm");
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
 
-      location.href = "/06_admin/03_admin_home.html";
+        const email = document.getElementById("adminEmail").value.trim();
+        const password = document.getElementById("adminPassword").value;
+
+        if (!email || !password) {
+          alert("이메일/비밀번호를 입력해주세요.");
+          return;
+        }
+
+        const { error } = await window.supabaseClient.auth.signInWithPassword({ email, password });
+        if (error) {
+          alert("로그인 실패: " + error.message);
+          return;
+        }
+
+        location.href = "/06_admin/03_admin_home.html";
+      });
     });
-  });
   </script>
 </body>
+
 </html>

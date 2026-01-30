@@ -10,3 +10,4 @@ if (!window.supabaseClient) {
     "sb_publishable_YMxUFWADxfI2wSmMU7RDew_Q6nMYnR2"
   );
 }
+

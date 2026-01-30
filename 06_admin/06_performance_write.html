@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="/assets/images/00_common/logo_top.svg" type="image/svg+xml">
+    <title>서환산업 | 실적 작성</title>
+
+    <link rel="stylesheet" href="/css/01_common.css">
+    <link rel="stylesheet" href="/css/02_pages.css">
+    <link rel="stylesheet" href="/css/03_admin.css">
+</head>
+
+<body>
+
+    <main class="admin-wrap">
+        <section class="admin-card">
+            <div class="admin-card__head">
+                <h1 class="admin-card__title">실적 작성</h1>
+                <p class="admin-card__desc">작성 후 저장하면 전체 사업실적 페이지에 자동 반영됩니다.</p>
+            </div>
+
+            <div class="admin-card__body">
+                <form id="perfWriteForm">
+
+                    <div class="admin-field">
+                        <label class="admin-label" for="workDate">공사일자</label>
+                        <input class="admin-input" id="workDate" type="text" placeholder="예) 2024.08">
+                    </div>
+
+                    <div class="admin-field">
+                        <label class="admin-label" for="workTitle">공사명</label>
+                        <input class="admin-input" id="workTitle" type="text" placeholder="공사명을 입력하세요">
+                    </div>
+
+                    <div class="admin-field">
+                        <label class="admin-label" for="client">발주처</label>
+                        <input class="admin-input" id="client" type="text" placeholder="발주처를 입력하세요">
+                    </div>
+
+                    <div class="admin-actions">
+                        <button class="admin-btn admin-btn--primary" type="submit">등록</button>
+                        <a class="admin-btn admin-btn--ghost" href="/06_admin/03_admin_home.html">관리자 홈</a>
+                        <a class="admin-btn admin-btn--ghost" href="/06_admin/05_performance_manage.html">실적 목록</a>
+                    </div>
+
+                    <p class="admin-note">
+                        공사일자는 "YYYY.MM" 형식으로 입력하면 정렬에 유리합니다.
+                    </p>
+
+                </form>
+            </div>
+        </section>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="/js/01_supabase.js"></script>
+
+    <script>
+        /* =========================
+           YYYY.MM -> YYYYMM
+        ========================= */
+        function toSortKey(workDate) {
+            const m = String(workDate || "").match(/^(\d{4})\.(\d{1,2})/);
+            if (!m) return null;
+            const y = Number(m[1]);
+            const mo = Number(m[2]);
+            if (!y || !mo) return null;
+            return y * 100 + mo;
+        }
+
+        /* =========================
+           실적 작성
+        ========================= */
+        document.addEventListener("DOMContentLoaded", async () => {
+            const { data: { session } } = await window.supabaseClient.auth.getSession();
+            if (!session) {
+                location.href = "/06_admin/01_admin_login.html";
+                return;
+            }
+
+            const form = document.getElementById("perfWriteForm");
+
+            form.addEventListener("submit", async (e) => {
+                e.preventDefault();
+
+                const work_date = document.getElementById("workDate").value.trim();
+                const work_title = document.getElementById("workTitle").value.trim();
+                const client = document.getElementById("client").value.trim();
+
+                if (!work_date || !work_title || !client) {
+                    alert("공사일자/공사명/발주처를 모두 입력해주세요.");
+                    return;
+                }
+
+                const sort_key = toSortKey(work_date);
+
+                const payload = { work_date, work_title, client };
+                if (sort_key) payload.sort_key = sort_key;
+
+                const { error } = await window.supabaseClient
+                    .from("performance_all")
+                    .insert([payload]);
+
+                if (error) {
+                    alert("저장 실패: " + error.message);
+                    console.error(error);
+                    return;
+                }
+
+                alert("등록 완료");
+                location.href = "/06_admin/05_performance_manage.html";
+            });
+        });
+    </script>
+
+</body>
+
+</html>
