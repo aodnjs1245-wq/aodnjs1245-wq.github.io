@@ -275,14 +275,3 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   initHeroSlider();             /* 메인에서만 동작 */
 });
-
-/* =========================
-   Supabase Client (공지 테스트용)
-   - 중복 실행되어도 에러 없이 1번만 생성
-========================= */
-if (!window.supabaseClient) {
-  window.supabaseClient = supabase.createClient(
-    "https://yhakzowipdzazebswmgx.supabase.co",
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInloYWt6b3dpcGR6YXplYnN3bWd4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk3NDMyMDUsImV4cCI6MjA4NTMxOTIwNX0.Id3Lfhzpz9FG8jA7b9xkKXrfiZXu2VvvOX7JDpgdrgw"
-  );
-}
