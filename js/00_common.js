@@ -94,47 +94,54 @@ function bindBreadcrumbTouch() {
       .forEach((el) => {
         if (el !== dropdown) el.classList.remove("is-open");
       });
-
     dropdown.classList.add("is-open");
   }
 
-  /* 1) 첫 탭을 touchstart에서 막기 */
+  /* 1) 터치 시작에서 첫 탭 이동 차단 (삼성인터넷 핵심: passive:false) */
   document.addEventListener("touchstart", (e) => {
     if (!isTouchDevice()) return;
 
     const toggleLink = e.target.closest(".breadcrumb-toggle");
     const dropdown = e.target.closest(".breadcrumb-dropdown");
 
-    /* 드롭다운 밖 터치하면 닫기 */
     if (!dropdown) {
       closeAll();
       return;
     }
 
-    /* 토글 눌렀을 때만 제어 */
     if (!toggleLink) return;
 
-    /* 이미 열려있으면 2번째 탭은 이동 허용 */
+    /* 이미 열려있으면 두 번째 탭은 이동 허용 */
     if (dropdown.classList.contains("is-open")) return;
 
     /* 첫 탭: 이동 막고 열기 */
     e.preventDefault();
-    toggleLink.dataset.blockOnce = "1"; /* 이어지는 click 1회 차단 */
+    toggleLink.dataset.blockOnce = "1"; /* 뒤이어 발생하는 click 1회 차단 */
     openDrop(dropdown);
 
   }, { capture: true, passive: false });
 
-  /* 2) click 이동도 1회 차단(삼성인터넷 보험) */
+  /* 2) click에서도 1회 차단(삼성인터넷 보험) */
   document.addEventListener("click", (e) => {
     if (!isTouchDevice()) return;
 
     const toggleLink = e.target.closest(".breadcrumb-toggle");
     if (!toggleLink) return;
 
+    /* 첫 탭 직후 발생하는 click만 막고, 이후는 허용 */
     if (toggleLink.dataset.blockOnce === "1") {
       e.preventDefault();
       e.stopPropagation();
       delete toggleLink.dataset.blockOnce;
+    }
+  }, { capture: true });
+
+  /* 3) 메뉴 항목을 누르면 닫기 */
+  document.addEventListener("click", (e) => {
+    if (!isTouchDevice()) return;
+
+    if (e.target.closest(".breadcrumb-menu a")) {
+      closeAll();
     }
   }, { capture: true });
 }
