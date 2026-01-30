@@ -4,6 +4,8 @@
 
 .admin-wrap {
   max-width: 1200px;
+  margin: 0 auto;
+  /* 추가: wrap 자체를 화면 가운데로 */
   min-height: calc(100vh - 120px);
   padding: 40px 20px 80px;
   background: #f3f4f6;
@@ -137,6 +139,8 @@
   border-radius: 12px;
   padding: 16px;
   background: #ffffff;
+  display: flex;
+  flex-direction: column;
 }
 
 .admin-panel__title {
@@ -153,15 +157,14 @@
   line-height: 1.6;
 }
 
+
 /* =========================
    관리자 테이블 래퍼(라운드 + 스크롤)
 ========================= */
 .admin-table-wrap {
   overflow: auto;
   border-radius: 12px;
-  /* 상단 라운드 포함 */
   border: 1px solid #e5e7eb;
-  /* 구분선 */
   background: #ffffff;
 }
 
@@ -178,7 +181,6 @@
 .admin-table th,
 .admin-table td {
   white-space: nowrap;
-  /* 기본적으로 한 줄 */
 }
 
 /* 1열(공사일자) 폭 확보 */
@@ -199,5 +201,27 @@
 ========================= */
 .admin-panel .pagination {
   margin-top: 32px;
-  /* 카드 아래쪽 여백 */
+}
+
+/* =========================
+   작성 페이지 우측 잘림(가로 overflow) 방지
+========================= */
+
+.admin-card,
+.admin-card__body {
+  box-sizing: border-box;
+  /* 패딩 포함 계산 */
+}
+
+.admin-input,
+.admin-textarea {
+  box-sizing: border-box;
+  /* padding/border 포함해서 100% 유지 */
+  max-width: 100%;
+  /* 혹시 모를 강제 제한 */
+}
+
+/* 혹시 내부 요소가 길게 튀면 가로 스크롤 방지 */
+.admin-wrap {
+  overflow-x: hidden;
 }
