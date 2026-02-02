@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" href="/assets/images/00_common/logo_top.svg" type="image/svg+xml">
+    <title>서환산업 | 실적 카드 관리</title>
+
+    <link rel="stylesheet" href="/css/01_common.css">
+    <link rel="stylesheet" href="/css/02_pages.css">
+    <link rel="stylesheet" href="/css/03_admin.css">
+</head>
+
+<body>
+
+    <main class="admin-wrap">
+        <section class="admin-card">
+
+            <div class="admin-card__head">
+                <h1 class="admin-card__title">실적 카드 관리</h1>
+                <p class="admin-card__desc">카드 수정/삭제 후 각 페이지에 자동 반영됩니다.</p>
+            </div>
+
+            <div class="admin-card__body">
+
+                <div class="admin-actions" style="justify-content:flex-end;">
+                    <a class="admin-btn admin-btn--ghost" href="/06_admin/03_admin_home.html">관리자 홈</a>
+                    <a class="admin-btn admin-btn--primary" href="/06_admin/09_performance_cards_write.html">새 카드 작성</a>
+                </div>
+
+                <!-- 수정 패널 -->
+                <div class="admin-panel" id="editPanel" style="display:none; margin-top:14px;">
+                    <h2 class="admin-panel__title">실적 카드 수정</h2>
+
+                    <form id="editForm" style="margin-top:12px;">
+                        <input type="hidden" id="editId">
+                        <input type="hidden" id="editOldImagePath">
+
+                        <div class="admin-field">
+                            <label class="admin-label" for="editCategory">구분</label>
+                            <select class="admin-input" id="editCategory">
+                                <option value="key">주요실적</option>
+                                <option value="maintenance">운영/경상정비</option>
+                            </select>
+                        </div>
+
+                        <div class="admin-field">
+                            <label class="admin-label" for="editTitle">프로젝트명(필수)</label>
+                            <input class="admin-input" id="editTitle" type="text" />
+                        </div>
+
+                        <div class="admin-field">
+                            <label class="admin-label" for="editSortKey">정렬값(선택)</label>
+                            <input class="admin-input" id="editSortKey" type="number" placeholder="예) 202506" />
+                        </div>
+
+                        <div class="admin-field">
+                            <label class="admin-label" for="editImageFile">상단 이미지 교체(선택)</label>
+                            <input class="admin-input" id="editImageFile" type="file" accept="image/*" />
+                            <p class="admin-note" style="margin-top:6px;">권장: JPG/PNG/WebP, 5MB 이하</p>
+
+                            <div style="margin-top:10px; display:flex; gap:12px; align-items:center;">
+                                <img id="editImagePreview" src="" alt=""
+                                    style="width:120px; height:80px; object-fit:cover; border-radius:10px; border:1px solid #e5e7eb; display:none;">
+                                <label
+                                    style="display:flex; align-items:center; gap:8px; font-size:13px; color:#6b7280;">
+                                    <input type="checkbox" id="editRemoveImage" />
+                                    이미지 제거
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- 주요실적 fields -->
+                        <div id="editFieldsKey" style="margin-top:10px;">
+                            <div class="admin-grid-2">
+                                <div class="admin-field">
+                                    <label class="admin-label" for="k_workDate">공사일자</label>
+                                    <input class="admin-input" id="k_workDate" type="text" placeholder="예) 2021.06" />
+                                </div>
+
+                                <div class="admin-field">
+                                    <label class="admin-label" for="k_client">발주처</label>
+                                    <input class="admin-input" id="k_client" type="text" />
+                                </div>
+                            </div>
+
+                            <div class="admin-grid-2">
+                                <div class="admin-field">
+                                    <label class="admin-label" for="k_contractor">시공사</label>
+                                    <input class="admin-input" id="k_contractor" type="text" />
+                                </div>
+
+                                <div class="admin-field">
+                                    <label class="admin-label" for="k_scale">규모</label>
+                                    <input class="admin-input" id="k_scale" type="text" placeholder="예) PV-60MW" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 운영/경상정비 fields -->
+                        <div id="editFieldsMaint" style="margin-top:10px; display:none;">
+                            <div class="admin-grid-2">
+                                <div class="admin-field">
+                                    <label class="admin-label" for="m_period">운영기간</label>
+                                    <input class="admin-input" id="m_period" type="text" />
+                                </div>
+
+                                <div class="admin-field">
+                                    <label class="admin-label" for="m_capacity">설비용량</label>
+                                    <input class="admin-input" id="m_capacity" type="text" />
+                                </div>
+                            </div>
+
+                            <div class="admin-field">
+                                <label class="admin-label" for="m_client">발주처</label>
+                                <input class="admin-input" id="m_client" type="text" />
+                            </div>
+
+                            <div class="admin-field">
+                                <label class="admin-label" for="m_tasks">주요업무</label>
+                                <textarea class="admin-textarea" id="m_tasks" rows="4"></textarea>
+                            </div>
+                        </div>
+
+                        <div class="admin-actions" style="justify-content:flex-end; margin-top:14px;">
+                            <button class="admin-btn admin-btn--ghost" type="button" id="btnCancelEdit">취소</button>
+                            <button class="admin-btn admin-btn--primary" type="submit">수정 저장</button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- 목록 -->
+                <div class="admin-panel" style="margin-top:14px;">
+                    <h2 class="admin-panel__title">목록</h2>
+                    <p class="admin-panel__text">삭제는 되돌릴 수 없습니다.</p>
+                    <div id="cardList" style="margin-top:12px;"></div>
+                </div>
+
+            </div>
+        </section>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="/js/01_supabase.js"></script>
+
+    <script>
+        /* =========================
+           유틸
+        ========================= */
+        function formatDate(iso) {
+            const d = new Date(iso);
+            const y = d.getFullYear();
+            const m = String(d.getMonth() + 1).padStart(2, "0");
+            const day = String(d.getDate()).padStart(2, "0");
+            return `${y}-${m}-${day}`;
+        }
+
+        /* =========================
+           로그인 체크
+        ========================= */
+        async function requireAdmin() {
+            const { data: { session } } = await window.supabaseClient.auth.getSession();
+            if (!session) {
+                location.href = "/06_admin/01_admin_login.html";
+                return false;
+            }
+            return true;
+        }
+
+        /* =========================
+           카테고리 UI 토글
+        ========================= */
+        function syncEditFieldsUI(category) {
+            const keyBox = document.getElementById("editFieldsKey");
+            const mBox = document.getElementById("editFieldsMaint");
+            if (category === "key") {
+                keyBox.style.display = "";
+                mBox.style.display = "none";
+            } else {
+                keyBox.style.display = "none";
+                mBox.style.display = "";
+            }
+        }
+
+        /* =========================
+           수정 패널 열기/닫기
+        ========================= */
+        function openEdit(row) {
+            document.getElementById("editPanel").style.display = "block";
+            document.getElementById("editId").value = row.id;
+            document.getElementById("editCategory").value = row.category;
+            document.getElementById("editTitle").value = row.title || "";
+            document.getElementById("editSortKey").value = (row.sort_key ?? "");
+            document.getElementById("editOldImagePath").value = row.image_path || "";
+            document.getElementById("editRemoveImage").checked = false;
+            document.getElementById("editImageFile").value = "";
+
+            const preview = document.getElementById("editImagePreview");
+            if (row.image_url) {
+                preview.src = row.image_url;
+                preview.style.display = "block";
+            } else {
+                preview.src = "";
+                preview.style.display = "none";
+            }
+
+            const f = row.fields || {};
+            document.getElementById("k_workDate").value = f.work_date || "";
+            document.getElementById("k_client").value = f.client || "";
+            document.getElementById("k_contractor").value = f.contractor || "";
+            document.getElementById("k_scale").value = f.scale || "";
+
+            document.getElementById("m_period").value = f.period || "";
+            document.getElementById("m_capacity").value = f.capacity || "";
+            document.getElementById("m_client").value = f.client || "";
+            document.getElementById("m_tasks").value = f.tasks || "";
+
+            syncEditFieldsUI(row.category);
+            window.scrollTo({ top: 0, behavior: "smooth" });
+        }
+
+        function closeEdit() {
+            document.getElementById("editPanel").style.display = "none";
+            document.getElementById("editId").value = "";
+            document.getElementById("editOldImagePath").value = "";
+        }
+
+        /* =========================
+           이미지 업로드(수정용)
+        ========================= */
+        async function uploadEditImageIfAny(category) {
+            const input = document.getElementById("editImageFile");
+            const file = input.files && input.files[0];
+            if (!file) return { image_url: null, image_path: null };
+
+            if (file.size > 5 * 1024 * 1024) {
+                alert("이미지는 5MB 이하로 올려주세요.");
+                return { image_url: null, image_path: null };
+            }
+
+            const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
+            const safeExt = ["jpg", "jpeg", "png", "webp"].includes(ext) ? ext : "jpg";
+            const now = Date.now();
+            const path = `cards/${category}/${now}.${safeExt}`;
+
+            const { error: upErr } = await window.supabaseClient
+                .storage
+                .from("performance")
+                .upload(path, file, { upsert: true, contentType: file.type });
+
+            if (upErr) {
+                console.error(upErr);
+                alert("이미지 업로드 실패: " + upErr.message);
+                return { image_url: null, image_path: null };
+            }
+
+            const { data } = window.supabaseClient
+                .storage
+                .from("performance")
+                .getPublicUrl(path);
+
+            return { image_url: data?.publicUrl || null, image_path: path };
+        }
+
+        /* =========================
+           목록 로드/렌더
+        ========================= */
+        async function loadList() {
+            const wrap = document.getElementById("cardList");
+
+            const { data, error } = await window.supabaseClient
+                .from("performance_cards")
+                .select("id, category, title, created_at, image_url, image_path, sort_key")
+                .order("sort_key", { ascending: false })
+                .order("created_at", { ascending: false });
+
+            if (error) {
+                console.error(error);
+                wrap.innerHTML = `<div class="admin-panel__text">목록을 불러오지 못했습니다.</div>`;
+                return;
+            }
+
+            if (!data || data.length === 0) {
+                wrap.innerHTML = `<div class="admin-panel__text">등록된 카드가 없습니다.</div>`;
+                return;
+            }
+
+            wrap.innerHTML = data.map(row => {
+                const catText = row.category === "key" ? "주요실적" : "운영/경상정비";
+                const thumb = row.image_url
+                    ? `<img src="${row.image_url}" alt="" class="card-thumb">`
+                    : `<div class="card-thumb card-thumb--empty"></div>`;
+
+                return `
+          <div class="card-row">
+            <div class="card-thumb-wrap">${thumb}</div>
+
+            <div class="card-body">
+              <div class="card-title">${row.title}</div>
+              <div class="card-meta">
+                구분: ${catText} · 작성일: ${formatDate(row.created_at)} · ID: ${row.id}${row.sort_key ? ` · 정렬: ${row.sort_key}` : ""}
+              </div>
+            </div>
+
+            <div class="card-actions">
+              <button class="admin-btn admin-btn--ghost" data-action="edit" data-id="${row.id}" type="button">수정</button>
+              <button class="admin-btn admin-btn--danger" data-action="delete" data-id="${row.id}" type="button">삭제</button>
+            </div>
+          </div>
+        `;
+            }).join("");
+        }
+
+        /* =========================
+           삭제(DB + 스토리지)
+        ========================= */
+        async function deleteRow(id) {
+            const yes = confirm("정말 삭제할까요? 삭제하면 되돌릴 수 없습니다.");
+            if (!yes) return;
+
+            const { data: row, error: oneErr } = await window.supabaseClient
+                .from("performance_cards")
+                .select("id, image_path")
+                .eq("id", id)
+                .single();
+
+            if (oneErr) {
+                console.error(oneErr);
+                alert("삭제 대상 조회 실패: " + oneErr.message);
+                return;
+            }
+
+            const { error: delErr } = await window.supabaseClient
+                .from("performance_cards")
+                .delete()
+                .eq("id", id);
+
+            if (delErr) {
+                console.error(delErr);
+                alert("삭제 실패: " + delErr.message);
+                return;
+            }
+
+            if (row?.image_path) {
+                const { error: stErr } = await window.supabaseClient
+                    .storage
+                    .from("performance")
+                    .remove([row.image_path]);
+
+                if (stErr) console.warn("DB는 삭제됐지만 이미지 삭제 실패:", stErr);
+            }
+
+            alert("삭제 완료");
+            closeEdit();
+            await loadList();
+        }
+
+        /* =========================
+           초기 실행/이벤트
+        ========================= */
+        document.addEventListener("DOMContentLoaded", async () => {
+            const ok = await requireAdmin();
+            if (!ok) return;
+
+            await loadList();
+
+            document.getElementById("btnCancelEdit").addEventListener("click", closeEdit);
+
+            document.getElementById("editCategory").addEventListener("change", (e) => {
+                syncEditFieldsUI(e.target.value);
+            });
+
+            document.getElementById("editImageFile").addEventListener("change", (e) => {
+                const file = e.target.files && e.target.files[0];
+                const preview = document.getElementById("editImagePreview");
+                if (!file) return;
+
+                const url = URL.createObjectURL(file);
+                preview.src = url;
+                preview.style.display = "block";
+            });
+
+            document.getElementById("editForm").addEventListener("submit", async (e) => {
+                e.preventDefault();
+
+                const id = Number(document.getElementById("editId").value);
+                const category = document.getElementById("editCategory").value;
+                const title = document.getElementById("editTitle").value.trim();
+                const sortKeyRaw = document.getElementById("editSortKey").value.trim();
+                const oldPath = document.getElementById("editOldImagePath").value || "";
+                const removeImage = document.getElementById("editRemoveImage").checked;
+
+                if (!id || !title) {
+                    alert("프로젝트명은 필수입니다.");
+                    return;
+                }
+
+                let fields = {};
+                if (category === "key") {
+                    fields = {
+                        work_date: document.getElementById("k_workDate").value.trim() || null,
+                        client: document.getElementById("k_client").value.trim() || null,
+                        contractor: document.getElementById("k_contractor").value.trim() || null,
+                        scale: document.getElementById("k_scale").value.trim() || null
+                    };
+                } else {
+                    fields = {
+                        period: document.getElementById("m_period").value.trim() || null,
+                        capacity: document.getElementById("m_capacity").value.trim() || null,
+                        client: document.getElementById("m_client").value.trim() || null,
+                        tasks: document.getElementById("m_tasks").value.trim() || null
+                    };
+                }
+
+                const payload = { category, title, fields };
+
+                const sort_key = Number(sortKeyRaw);
+                if (sortKeyRaw && Number.isFinite(sort_key)) payload.sort_key = sort_key;
+                if (!sortKeyRaw) payload.sort_key = null;
+
+                let newPath = "";
+                if (removeImage) {
+                    payload.image_url = null;
+                    payload.image_path = null;
+                } else {
+                    const img = await uploadEditImageIfAny(category);
+                    if (img?.image_url && img?.image_path) {
+                        payload.image_url = img.image_url;
+                        payload.image_path = img.image_path;
+                        newPath = img.image_path;
+                    }
+                }
+
+                const { error } = await window.supabaseClient
+                    .from("performance_cards")
+                    .update(payload)
+                    .eq("id", id);
+
+                if (error) {
+                    console.error(error);
+                    alert("수정 실패: 권한(RLS) 또는 입력값을 확인해주세요.");
+                    return;
+                }
+
+                if (removeImage && oldPath) {
+                    await window.supabaseClient.storage.from("performance").remove([oldPath]);
+                }
+
+                if (!removeImage && newPath && oldPath && oldPath !== newPath) {
+                    await window.supabaseClient.storage.from("performance").remove([oldPath]);
+                }
+
+                alert("수정 완료");
+                closeEdit();
+                await loadList();
+            });
+
+            document.getElementById("cardList").addEventListener("click", async (e) => {
+                const btn = e.target.closest("button[data-action]");
+                if (!btn) return;
+
+                const action = btn.dataset.action;
+                const id = Number(btn.dataset.id);
+
+                if (action === "edit") {
+                    const { data, error } = await window.supabaseClient
+                        .from("performance_cards")
+                        .select("id, category, title, sort_key, image_url, image_path, fields")
+                        .eq("id", id)
+                        .single();
+
+                    if (error || !data) {
+                        console.error(error);
+                        alert("수정 데이터를 불러오지 못했습니다.");
+                        return;
+                    }
+
+                    openEdit(data);
+                    return;
+                }
+
+                if (action === "delete") {
+                    await deleteRow(id);
+                }
+            });
+        });
+    </script>
+
+</body>
+
+</html>

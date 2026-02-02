@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" href="/assets/images/00_common/logo_top.svg" type="image/svg+xml">
+    <title>서환산업 | 실적 카드 작성</title>
+
+    <link rel="stylesheet" href="/css/01_common.css">
+    <link rel="stylesheet" href="/css/02_pages.css">
+    <link rel="stylesheet" href="/css/03_admin.css">
+
+</head>
+
+<body>
+
+    <main class="admin-wrap admin-perf-write">
+        <section class="admin-card">
+            <div class="admin-card__head">
+                <h1 class="admin-card__title">실적 카드 작성</h1>
+                <p class="admin-card__desc">주요실적 / 운영 및 경상정비실적을 같은 양식으로 등록합니다.</p>
+            </div>
+
+            <div class="admin-card__body">
+
+
+                <!-- 미리보기 -->
+                <div class="preview-wrap">
+                    <div class="preview-title">미리보기(기본 양식)</div>
+
+                    <div class="portfolio-card card preview-card" id="previewCard"></div>
+                    <div class="portfolio-img">
+                        <img id="previewImg" src="/assets/images/04_performance/01_performance_key_01.jpg"
+                            alt="미리보기 이미지" />
+                    </div>
+                    <div class="portfolio-info">
+                        <h2 id="previewTitle">프로젝트 제목이 여기에 표시됩니다</h2>
+                        <ul id="previewList"></ul>
+                    </div>
+                </div>
+
+                <p class="admin-note" style="margin-top:10px;">
+                    입력값은 저장 전에도 미리보기 카드에 반영됩니다.
+                </p>
+            </div>
+
+            <!-- 입력 폼 -->
+            <form id="cardWriteForm">
+                <div class="admin-grid-2">
+                    <div class="admin-field">
+                        <label class="admin-label" for="category">구분</label>
+                        <select class="admin-input" id="category">
+                            <option value="key">주요실적</option>
+                            <option value="maintenance">운영 및 경상정비실적</option>
+                        </select>
+                    </div>
+
+                    <div class="admin-field">
+                        <label class="admin-label" for="sortKey">정렬값(선택)</label>
+                        <input class="admin-input" id="sortKey" type="number" placeholder="예) 202406 (없으면 최신순)" />
+                    </div>
+                </div>
+
+                <div class="admin-field">
+                    <label class="admin-label" for="title">프로젝트명(필수)</label>
+                    <input class="admin-input" id="title" type="text" placeholder="예) 태안 햇들원태양광 발전소(운영)" />
+                </div>
+
+                <div class="admin-field">
+                    <label class="admin-label" for="imageFile">상단 이미지(선택)</label>
+                    <input class="admin-input" id="imageFile" type="file" accept="image/*" />
+                    <p class="admin-note">권장: 가로형 이미지 / JPG, PNG / 5MB 이하</p>
+                </div>
+
+                <!-- 주요실적 필드 -->
+                <div id="fieldsKey">
+                    <div class="admin-grid-2">
+                        <div class="admin-field">
+                            <label class="admin-label" for="k_workDate">공사일자</label>
+                            <input class="admin-input" id="k_workDate" type="text" placeholder="예) 2021.06" />
+                        </div>
+
+                        <div class="admin-field">
+                            <label class="admin-label" for="k_client">발주처</label>
+                            <input class="admin-input" id="k_client" type="text" placeholder="예) 태안햇들원태양광(주)" />
+                        </div>
+                    </div>
+
+                    <div class="admin-grid-2">
+                        <div class="admin-field">
+                            <label class="admin-label" for="k_contractor">시공사</label>
+                            <input class="admin-input" id="k_contractor" type="text" placeholder="예) (주)서환산업/GS건설(주)" />
+                        </div>
+
+                        <div class="admin-field">
+                            <label class="admin-label">
+                                <input type="checkbox" id="k_hasScale">
+                                규모 입력하기(선택)
+                            </label>
+                            <input class="admin-input" id="k_scale" type="text" placeholder="예) PV-60MW"
+                                style="display:none;">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 운영/경상정비 필드 -->
+                <div id="fieldsMaintenance" style="display:none;">
+                    <div class="admin-grid-2">
+                        <div class="admin-field">
+                            <label class="admin-label" for="m_period">운영기간</label>
+                            <input class="admin-input" id="m_period" type="text"
+                                placeholder="예) 2025.04 ~ 2045.03(20년)" />
+                        </div>
+
+                        <div class="admin-field">
+                            <label class="admin-label">
+                                <input type="checkbox" id="m_hasCapacity">
+                                설비용량 입력하기(선택)
+                            </label>
+                            <input class="admin-input" id="m_capacity" type="text" placeholder="예) PV-60MW"
+                                style="display:none;">
+                        </div>
+                    </div>
+
+                    <div class="admin-field">
+                        <label class="admin-label" for="m_client">발주처</label>
+                        <input class="admin-input" id="m_client" type="text" placeholder="예) 태안햇들원태양광(주)" />
+                    </div>
+
+                    <div class="admin-field">
+                        <label class="admin-label" for="m_tasks">주요업무</label>
+                        <textarea class="admin-textarea" id="m_tasks" rows="6" placeholder="줄바꿈으로 항목을 나눠주세요"></textarea>
+                        <p class="admin-note">저장 시 줄바꿈은 카드에서 자동으로 <br> 처리합니다.</p>
+                    </div>
+                </div>
+
+                <div class="admin-actions">
+                    <button class="admin-btn admin-btn--primary" type="submit" id="btnSubmit">등록</button>
+                    <a class="admin-btn admin-btn--ghost" href="/06_admin/03_admin_home.html">관리자 홈</a>
+                    <a class="admin-btn admin-btn--ghost" href="/06_admin/10_performance_cards_manage.html">목록</a>
+                </div>
+
+            </form>
+
+            </div>
+        </section>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="/js/01_supabase.js"></script>
+
+    <script>
+        /* =========================
+           로그인 체크
+        ========================= */
+        async function requireAdmin() {
+            const { data: { session } } = await window.supabaseClient.auth.getSession();
+            if (!session) {
+                location.href = "/06_admin/01_admin_login.html";
+                return false;
+            }
+            return true;
+        }
+
+        /* =========================
+           XSS 최소 방지
+        ========================= */
+        function escapeHtml(str) {
+            return String(str ?? "")
+                .replaceAll("&", "&amp;")
+                .replaceAll("<", "&lt;")
+                .replaceAll(">", "&gt;")
+                .replaceAll('"', "&quot;")
+                .replaceAll("'", "&#039;");
+        }
+
+        /* =========================
+           프리뷰 렌더
+        ========================= */
+        function renderPreview() {
+            const category = document.getElementById("category").value;
+            const title = document.getElementById("title").value.trim() || "프로젝트 제목이 여기에 표시됩니다";
+
+            document.getElementById("previewTitle").innerText = title;
+
+            const ul = document.getElementById("previewList");
+
+            if (category === "key") {
+                const workDate = document.getElementById("k_workDate").value.trim();
+                const client = document.getElementById("k_client").value.trim();
+                const contractor = document.getElementById("k_contractor").value.trim();
+                const scale = document.getElementById("k_scale").value.trim();
+
+                ul.innerHTML = `
+          <li><strong>공사일자</strong>${escapeHtml(workDate || "예) 2021.06")}</li>
+          <li><strong>발&nbsp;주&nbsp;처</strong>${escapeHtml(client || "예) 발주처 입력")}</li>
+          <li><strong>시&nbsp;공&nbsp;사</strong>${escapeHtml(contractor || "예) 시공사 입력")}</li>
+          <li><strong>규&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;모</strong>${escapeHtml(scale || "예) PV-60MW")}</li>
+        `;
+                return;
+            }
+
+            const period = document.getElementById("m_period").value.trim();
+            const capacity = document.getElementById("m_capacity").value.trim();
+            const client = document.getElementById("m_client").value.trim();
+            const tasks = document.getElementById("m_tasks").value.trim();
+
+            const tasksHtml = escapeHtml(tasks || "예) 주요업무를 줄바꿈으로 입력")
+                .replaceAll("\n", "<br>");
+
+            ul.innerHTML = `
+        <li><strong>운영기간</strong>${escapeHtml(period || "예) 2025.04 ~ 2045.03(20년)")}</li>
+        <li><strong>설비용량</strong>${escapeHtml(capacity || "예) PV-60MW")}</li>
+        <li><strong>발&nbsp;주&nbsp;처</strong>${escapeHtml(client || "예) 발주처 입력")}</li>
+        <li><strong>주요업무</strong>${tasksHtml}</li>
+      `;
+        }
+
+        /* =========================
+           카테고리 전환
+        ========================= */
+        function syncCategoryUI() {
+            const category = document.getElementById("category").value;
+            document.getElementById("fieldsKey").style.display = (category === "key") ? "block" : "none";
+            document.getElementById("fieldsMaintenance").style.display = (category === "maintenance") ? "block" : "none";
+            renderPreview();
+        }
+
+        /* =========================
+           이미지 프리뷰
+        ========================= */
+        function bindImagePreview() {
+            const input = document.getElementById("imageFile");
+            input.addEventListener("change", () => {
+                const file = input.files && input.files[0];
+                if (!file) return;
+                const url = URL.createObjectURL(file);
+                document.getElementById("previewImg").src = url;
+            });
+        }
+
+        /* =========================
+   Storage 업로드(이미지) - url + path 반환
+========================= */
+        async function uploadImageIfAny(category) {
+            const input = document.getElementById("imageFile");
+            const file = input.files && input.files[0];
+            if (!file) return { image_url: null, image_path: null }; // 이미지 없음
+
+            if (file.size > 5 * 1024 * 1024) {
+                alert("이미지는 5MB 이하로 올려주세요.");
+                return { image_url: null, image_path: null };
+            }
+
+            const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
+            const safeExt = ["jpg", "jpeg", "png", "webp"].includes(ext) ? ext : "jpg";
+
+            const now = Date.now();
+            const path = `cards/${category}/${now}.${safeExt}`; // 경로 단순화
+
+            const { error: upErr } = await window.supabaseClient
+                .storage
+                .from("performance")
+                .upload(path, file, { upsert: true, contentType: file.type });
+
+            if (upErr) {
+                console.error(upErr);
+                alert("이미지 업로드 실패: " + upErr.message);
+                return { image_url: null, image_path: null };
+            }
+
+            const { data } = window.supabaseClient
+                .storage
+                .from("performance")
+                .getPublicUrl(path);
+
+            return { image_url: data?.publicUrl || null, image_path: path };
+        }
+        /* =========================
+    저장
+ ========================= */
+        async function handleSubmit(e) {
+            e.preventDefault();
+
+            const category = document.getElementById("category").value;
+            const title = document.getElementById("title").value.trim();
+            const sortKeyRaw = document.getElementById("sortKey").value.trim();
+
+            if (!title) {
+                alert("프로젝트명(필수)을 입력해주세요.");
+                return;
+            }
+
+            let fields = {}; // fields 먼저 준비
+            if (category === "key") {
+                fields = {
+                    work_date: document.getElementById("k_workDate").value.trim() || null,
+                    client: document.getElementById("k_client").value.trim() || null,
+                    contractor: document.getElementById("k_contractor").value.trim() || null,
+                    scale: document.getElementById("k_scale").value.trim() || null
+                };
+            } else {
+                fields = {
+                    period: document.getElementById("m_period").value.trim() || null,
+                    capacity: document.getElementById("m_capacity").value.trim() || null,
+                    client: document.getElementById("m_client").value.trim() || null,
+                    tasks: document.getElementById("m_tasks").value.trim() || null
+                };
+            }
+
+            const img = await uploadImageIfAny(category); // 이미지 업로드 후 url/path 받기
+
+            const payload = { category, title, fields }; // payload는 딱 1번만 생성
+
+            const sort_key = Number(sortKeyRaw);
+            if (sortKeyRaw && Number.isFinite(sort_key)) payload.sort_key = sort_key;
+
+            if (img?.image_url) payload.image_url = img.image_url;   // 이미지 URL 저장
+            if (img?.image_path) payload.image_path = img.image_path; // 삭제용 path 저장
+
+            const { error } = await window.supabaseClient
+                .from("performance_cards")
+                .insert([payload]);
+
+            if (error) {
+                console.error(error);
+                alert("저장 실패: " + error.message);
+                return;
+            }
+
+            alert("등록 완료");
+            location.href = "/06_admin/10_performance_cards_manage.html";
+        }
+
+
+        /* =========================
+           초기 실행
+        ========================= */
+        document.addEventListener("DOMContentLoaded", async () => {
+            const ok = await requireAdmin();
+            if (!ok) return;
+
+            document.getElementById("category").addEventListener("change", syncCategoryUI);
+
+            ["title", "k_workDate", "k_client", "k_contractor", "k_scale", "m_period", "m_capacity", "m_client", "m_tasks"]
+                .forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.addEventListener("input", renderPreview);
+                });
+
+            bindImagePreview();
+            syncCategoryUI();
+            bindOptionalFields();
+            document.getElementById("cardWriteForm").addEventListener("submit", handleSubmit);
+        });
+
+        function bindOptionalFields() {
+            const kHas = document.getElementById("k_hasScale");
+            const kInput = document.getElementById("k_scale");
+
+            const mHas = document.getElementById("m_hasCapacity");
+            const mInput = document.getElementById("m_capacity");
+
+            if (kHas && kInput) {
+                kHas.addEventListener("change", () => {
+                    kInput.style.display = kHas.checked ? "block" : "none";
+                    if (!kHas.checked) kInput.value = "";
+                    renderPreview();
+                });
+            }
+
+            if (mHas && mInput) {
+                mHas.addEventListener("change", () => {
+                    mInput.style.display = mHas.checked ? "block" : "none";
+                    if (!mHas.checked) mInput.value = "";
+                    renderPreview();
+                });
+            }
+        }
+    </script>
+
+
+</body>
+
+</html>
