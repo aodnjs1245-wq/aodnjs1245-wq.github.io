@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>서환산업 | 관리자 - 자료실 관리</title>
+
+    <!-- 공통 -->
+    <link rel="stylesheet" href="/css/01_common.css">
+    <link rel="stylesheet" href="/css/02_pages.css">
+    <!-- 관리자 -->
+    <link rel="stylesheet" href="/css/03_admin.css">
+</head>
+
+<body>
+
+    <!-- 공통 헤더 -->
+    <div id="app-header"></div>
+
+    <main class="admin-wrap">
+
+        <section class="admin-card">
+            <div class="admin-card__head">
+                <h1 class="admin-card__title">자료실 관리</h1>
+                <p class="admin-card__desc">자료실 글 작성 및 파일 업로드를 할 수 있습니다.</p>
+            </div>
+
+            <div class="admin-card__body">
+
+                <!-- 작성 폼 -->
+                <form id="libraryForm">
+                    <div class="admin-field">
+                        <label class="admin-label" for="libTitle">제목(필수)</label>
+                        <input class="admin-input" id="libTitle" type="text" placeholder="제목을 입력하세요" required />
+                    </div>
+
+                    <div class="admin-field">
+                        <label class="admin-label" for="libContent">내용(선택)</label>
+                        <textarea class="admin-textarea" id="libContent" rows="6"
+                            placeholder="내용을 입력하세요(선택)"></textarea>
+                    </div>
+
+                    <div class="admin-field">
+                        <label class="admin-label" for="libFile">첨부파일(선택)</label>
+                        <input class="admin-input" id="libFile" type="file" />
+                        <p class="admin-note">권장: PDF / 30MB 이하</p>
+                    </div>
+
+                    <div class="admin-actions">
+                        <button class="admin-btn admin-btn--primary" type="submit" id="btnSubmit">등록</button>
+                        <a class="admin-btn admin-btn--ghost" href="/06_admin/03_admin_home.html">관리자 홈</a>
+                        <a class="admin-btn admin-btn--ghost" href="/06_admin/08_library_manage.html">자료 목록</a>
+                    </div>
+                </form>
+
+            </div>
+        </section>
+
+    </main>
+
+    <!-- 공통 푸터 -->
+    <div id="app-footer"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="/js/01_supabase.js"></script>
+    <script src="/js/00_common.js"></script>
+
+    <!-- 자료실 관리자 로직 -->
+    <script src="/js/03_admin_library.js"></script>
+</body>
+
+</html>

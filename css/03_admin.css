@@ -225,3 +225,76 @@
 .admin-wrap {
   overflow-x: hidden;
 }
+
+/* =========================
+   관리자 공통 유틸
+========================= */
+.admin-actions--right {
+  justify-content: flex-end;
+}
+
+.admin-mt-8 {
+  margin-top: 8px;
+}
+
+.admin-mt-12 {
+  margin-top: 12px;
+}
+
+.admin-mt-14 {
+  margin-top: 14px;
+}
+
+/* =========================
+   자료실 관리자 목록
+========================= */
+.lib-row {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 12px 0;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.lib-main {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.lib-title {
+  font-weight: 800;
+  color: #374151;
+  margin-bottom: 6px;
+  overflow-wrap: anywhere;
+}
+
+.lib-meta {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.lib-snippet {
+  margin-top: 8px;
+  font-size: 13px;
+  color: #6b7280;
+  line-height: 1.6;
+}
+
+.lib-file {
+  margin-top: 8px;
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.lib-filelink {
+  text-decoration: underline;
+  color: #374151;
+}
+
+.lib-actions {
+  display: flex;
+  gap: 8px;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}

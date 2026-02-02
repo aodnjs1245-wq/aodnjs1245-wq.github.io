@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>서환산업 | 자료실</title>
+
+    <!-- 공통 -->
+    <link rel="stylesheet" href="/css/01_common.css">
+    <!-- 페이지별 -->
+    <link rel="stylesheet" href="/css/02_pages.css">
+</head>
+
+<body>
+
+    <!-- ===== 공통 헤더 삽입 영역 ===== -->
+    <div id="app-header"></div>
+
+    <main class="subpage">
+
+        <!-- ===== 자료실 상단 비주얼 ===== -->
+        <section class="sub-visual sub-visual--company">
+            <div class="sub-visual-inner">
+                <h1 class="sub-visual-title">자료실</h1>
+                <p class="sub-visual-desc">
+                    서환산업의 각종 자료와 첨부파일을 다운로드하실 수 있습니다.
+                </p>
+            </div>
+        </section>
+
+        <!-- 검색 영역(현재 UI만 유지, 기능은 나중에 연결) -->
+        <section class="notice-search">
+            <input type="text" placeholder="검색어를 입력하세요">
+            <button>검색</button>
+        </section>
+
+        <!-- 자료실 목록(공지사항과 동일 UI 클래스 재사용) -->
+        <section class="notice-list" id="libraryList"></section>
+
+        <!-- 페이지 번호(일단 고정 UI) -->
+        <div class="pagination">
+            <span class="disabled">«</span>
+            <a href="#" class="active">1</a>
+            <span class="disabled">»</span>
+        </div>
+
+    </main>
+
+    <!-- ===== 공통 푸터 삽입 영역 ===== -->
+    <div id="app-footer"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="/js/01_supabase.js"></script>
+    <script src="/js/00_common.js"></script>
+
+    <script>
+        /* =========================
+           자료실 목록 렌더
+           - 테이블명: library_items (추후 생성)
+           - 컬럼 예시: id, title, created_at
+        ========================= */
+        function formatDate(iso) {
+            const d = new Date(iso);
+            const y = d.getFullYear();
+            const m = String(d.getMonth() + 1).padStart(2, "0");
+            const day = String(d.getDate()).padStart(2, "0");
+            return `${y}-${m}-${day}`;
+        }
+
+        document.addEventListener("DOMContentLoaded", async () => {
+            const listEl = document.getElementById("libraryList");
+            if (!listEl) return;
+
+            const { data, error } = await window.supabaseClient
+                .from("library_items") // 자료실 테이블명
+                .select("id, title, created_at")
+                .order("id", { ascending: false });
+
+            if (error) {
+                console.error(error);
+                listEl.innerHTML = `
+      <div class="notice-item">
+        <div class="notice-title">자료실을 불러오지 못했습니다.</div>
+      </div>
+    `;
+                return;
+            }
+
+            if (!data || data.length === 0) {
+                listEl.innerHTML = `
+      <div class="notice-item">
+        <div class="notice-title">등록된 자료가 없습니다.</div>
+      </div>
+    `;
+                return;
+            }
+
+            listEl.innerHTML = data.map(row => `
+    <div class="notice-item">
+      <div class="notice-title">
+        <a href="/05_notice/06_library_view.html?id=${row.id}">${row.title}</a>
+      </div>
+      <div class="notice-date">${formatDate(row.created_at)}</div>
+    </div>
+  `).join("");
+        });
+    </script>
+
+</body>
+
+</html>

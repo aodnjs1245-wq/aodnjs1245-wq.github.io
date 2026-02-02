@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>서환산업 | 자료실 상세</title>
+
+    <!-- 공통 -->
+    <link rel="stylesheet" href="/css/01_common.css">
+    <!-- 페이지별 -->
+    <link rel="stylesheet" href="/css/02_pages.css">
+</head>
+
+<body>
+
+    <!-- ===== 공통 헤더 삽입 영역 ===== -->
+    <div id="app-header"></div>
+
+    <div class="notice-view-wrap">
+        <div class="notice-view-box">
+
+            <!-- 제목 -->
+            <h2 class="notice-view-title" id="libraryTitle"></h2>
+
+            <!-- 작성일 -->
+            <div class="notice-view-meta">
+                작성일 : <span id="libraryDate"></span>
+            </div>
+
+            <!-- 본문 -->
+            <div class="notice-view-content" id="libraryContent"></div>
+
+            <!-- 첨부파일(자료실만 추가) -->
+            <div class="notice-view-content" id="libraryFileArea" style="margin-top:16px;"></div>
+
+            <!-- 목록 버튼 -->
+            <div class="notice-view-btn">
+                <a href="/05_notice/06_library.html">목록으로 돌아가기</a>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ===== 공통 푸터 삽입 영역 ===== -->
+    <div id="app-footer"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="/js/01_supabase.js"></script>
+    <script src="/js/00_common.js"></script>
+
+    <script>
+        /* =========================
+           자료실 상세 렌더
+           - 테이블명: library_items (추후 생성)
+           - 컬럼 예시:
+             id, title, content, file_url, file_name, file_size, created_at
+        ========================= */
+        function formatDate(iso) {
+            const d = new Date(iso);
+            const y = d.getFullYear();
+            const m = String(d.getMonth() + 1).padStart(2, "0");
+            const day = String(d.getDate()).padStart(2, "0");
+            return `${y}-${m}-${day}`;
+        }
+
+        /* 파일 용량 표기(옵션) */
+        function formatBytes(bytes) {
+            const n = Number(bytes);
+            if (!n || n <= 0) return "";
+            const units = ["B", "KB", "MB", "GB"];
+            let i = 0;
+            let v = n;
+            while (v >= 1024 && i < units.length - 1) {
+                v = v / 1024;
+                i++;
+            }
+            return `${v.toFixed(i === 0 ? 0 : 1)}${units[i]}`;
+        }
+
+        document.addEventListener("DOMContentLoaded", async () => {
+            const params = new URLSearchParams(location.search);
+            const id = params.get("id");
+
+            const elTitle = document.getElementById("libraryTitle");
+            const elDate = document.getElementById("libraryDate");
+            const elContent = document.getElementById("libraryContent");
+            const elFileArea = document.getElementById("libraryFileArea");
+
+            if (!id) {
+                elTitle.textContent = "잘못된 접근입니다.";
+                elDate.textContent = "";
+                elContent.textContent = "자료 ID가 없습니다.";
+                if (elFileArea) elFileArea.innerHTML = "";
+                return;
+            }
+
+            const { data, error } = await window.supabaseClient
+                .from("library_items") // 자료실 테이블명
+                .select("title, content, file_url, file_name, file_size, created_at")
+                .eq("id", Number(id))
+                .single();
+
+            if (error || !data) {
+                console.error(error);
+                elTitle.textContent = "자료를 불러오지 못했습니다.";
+                elDate.textContent = "";
+                elContent.textContent = "잠시 후 다시 시도해주세요.";
+                if (elFileArea) elFileArea.innerHTML = "";
+                return;
+            }
+
+            elTitle.textContent = data.title || "";
+            elDate.textContent = data.created_at ? formatDate(data.created_at) : "";
+            elContent.innerHTML = String(data.content || "").replaceAll("\n", "<br>");
+
+            /* 첨부파일 렌더 */
+            if (!elFileArea) return;
+
+            if (data.file_url) {
+                const fileName = data.file_name || "첨부파일";
+                const fileSize = formatBytes(data.file_size);
+
+                const downloadUrl = data.file_url.includes("?")
+                    ? `${data.file_url}&download=${encodeURIComponent(fileName)}`
+                    : `${data.file_url}?download=${encodeURIComponent(fileName)}`;
+
+                elFileArea.innerHTML = `
+    <div class="attach-box">
+      <div class="attach-left">
+        <div class="attach-title">첨부파일 : ${fileName}</div>
+        ${fileSize ? `<div class="attach-meta">용량 : ${fileSize}</div>` : ``}
+      </div>
+      <a class="attach-btn" href="${downloadUrl}" download>다운로드</a>
+    </div>
+  `;
+            } else {
+                elFileArea.innerHTML = `
+    <div class="attach-empty">첨부파일이 없습니다.</div>
+  `;
+            }
+
+        });
+    </script>
+
+</body>
+
+</html>
