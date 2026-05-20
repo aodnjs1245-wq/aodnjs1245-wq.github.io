@@ -31,17 +31,47 @@ function formatBytes(bytes) {
 
 /* 로그인 확인(관리자만 접근) */
 async function requireAdmin() {
+
+    // 세션 확인
     const { data, error } = await window.supabaseClient.auth.getSession();
+
     if (error) {
         console.error(error);
-        location.href = "/06_admin/01_admin_login.html"; // 너 로그인 페이지 경로로 수정
+        location.href = "/06_admin/01_admin_login.html";
         return null;
     }
+
     const session = data?.session;
+
+    // 로그인 안 된 경우
     if (!session) {
-        location.href = "/06_admin/01_admin_login.html"; // 너 로그인 페이지 경로로 수정
+        location.href = "/06_admin/01_admin_login.html";
         return null;
     }
+
+    // 현재 로그인한 사용자 UID
+    const userId = session.user.id;
+
+    // 관리자 테이블 확인
+    const { data: adminData, error: adminError } = await window.supabaseClient
+        .from("admin_users")
+        .select("id")
+        .eq("user_id", userId)
+        .maybeSingle();
+
+    if (adminError) {
+        console.error(adminError);
+        alert("관리자 권한 확인에 실패했습니다.");
+        return null;
+    }
+
+    // 관리자 목록에 없으면 차단
+    if (!adminData) {
+        alert("관리자 권한이 없습니다.");
+        location.href = "/";
+        return null;
+    }
+
     return session;
 }
 
