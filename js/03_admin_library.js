@@ -29,7 +29,7 @@ function formatBytes(bytes) {
     return `${v.toFixed(i === 0 ? 0 : 1)}${units[i]}`;
 }
 
-/* 로그인 확인(관리자만 접근) */
+//* 로그인 확인(관리자만 접근) */
 async function requireAdmin() {
 
     // 세션 확인
@@ -74,7 +74,6 @@ async function requireAdmin() {
 
     return session;
 }
-
 /* 로그아웃 */
 async function handleLogout() {
     await window.supabaseClient.auth.signOut();
