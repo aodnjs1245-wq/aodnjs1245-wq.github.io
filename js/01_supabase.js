@@ -6,8 +6,8 @@
 
 if (!window.supabaseClient) {
   window.supabaseClient = supabase.createClient(
-    "https://yhakzowipdzazebswmgx.supabase.co",
-    "sb_publishable_YMxUFWADxfI2wSmMU7RDew_Q6nMYnR2"
+    "https://wnaezdaizoildoyuirqe.supabase.co/rest/v1/",
+    "sb_publishable_m9OudVQBw4tvPC0JFieUXg_B8T5Iww1"
   );
 }
 
