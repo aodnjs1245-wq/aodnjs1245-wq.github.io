@@ -76,100 +76,152 @@
   <!-- ===== 공통 푸터 삽입 영역 ===== -->
   <div id="app-footer"></div>
 
-  <!-- Supabase SDK -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-  <!-- Supabase Client (이미 있는 파일) -->
-  <script src="/js/01_supabase.js"></script>
+  <script type="module" src="/js/01_firebase.js"></script>
 
   <!-- 공통 JS -->
   <script src="/js/00_common.js"></script>
 
   <!-- 전체 사업실적 로드(반드시 supabase 로드 이후) -->
-  <script>
+  <script type="module">
     /* =========================
-       전체 사업실적(3열) - Supabase 연동 + 25개 페이지네이션
-       - supabaseClient 준비 후 실행
+       전체 사업실적
+       Firebase 연동
     ========================= */
 
-    const tbody = document.getElementById("allPerfTbody");
-    const pagination = document.getElementById("allPerfPagination");
+    import { db } from "/js/01_firebase.js";
+
+    import {
+      collection,
+      getDocs,
+      query,
+      orderBy
+    } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js";
+
+    const tbody =
+      document.getElementById("allPerfTbody");
+
+    const pagination =
+      document.getElementById("allPerfPagination");
 
     const PER_PAGE = 25;
+
     let currentPage = 1;
     let ALL_PERFORMANCE = [];
 
     function toSortKey(workDate) {
-      const m = String(workDate || "").match(/^(\d{4})\.(\d{1,2})/);
+
+      const m =
+        String(workDate || "")
+          .match(/^(\d{4})\.(\d{1,2})/);
+
       if (!m) return 0;
+
       const y = Number(m[1]);
       const mo = Number(m[2]);
+
       return y * 100 + mo;
     }
 
-    async function waitForSupabaseClient(timeoutMs = 3000) {
-      const start = Date.now();
-      while (!window.supabaseClient) {
-        if (Date.now() - start > timeoutMs) return false;
-        await new Promise(r => setTimeout(r, 50));
-      }
-      return true;
-    }
-
     async function loadPerformance() {
+
       try {
-        const ready = await waitForSupabaseClient();
-        if (!ready) throw new Error("Supabase Client가 없습니다. /js/01_supabase.js 로드 순서를 확인하세요.");
 
-        const sb = window.supabaseClient;
+        const q = query(
+          collection(db, "performance_all"),
+          orderBy("created_at", "desc")
+        );
 
-        const { data, error } = await sb
-          .from("performance_all")
-          .select("work_date, work_title, client, sort_key, created_at")
-          .order("sort_key", { ascending: false })
-          .order("created_at", { ascending: false });
+        const snap = await getDocs(q);
 
-        if (error) throw error;
+        ALL_PERFORMANCE =
+          snap.docs.map((d) => {
 
-        ALL_PERFORMANCE = (data || []).map((row) => ({
-          date: row.work_date,
-          title: row.work_title,
-          client: row.client,
-          sort_key: row.sort_key ?? toSortKey(row.work_date),
-          created_at: row.created_at
-        }));
+            const row = d.data();
+
+            return {
+              date: row.work_date,
+              title: row.work_title,
+              client: row.client,
+              sort_key:
+                row.sort_key ??
+                toSortKey(row.work_date),
+              created_at: row.created_at
+            };
+          });
+
+        ALL_PERFORMANCE.sort((a, b) => {
+
+          const aKey = Number(a.sort_key || 0);
+          const bKey = Number(b.sort_key || 0);
+
+          if (bKey !== aKey) {
+            return bKey - aKey;
+          }
+
+          const aTime =
+            a.created_at?.toDate
+              ? a.created_at.toDate().getTime()
+              : 0;
+
+          const bTime =
+            b.created_at?.toDate
+              ? b.created_at.toDate().getTime()
+              : 0;
+
+          return bTime - aTime;
+        });
 
         currentPage = 1;
+
         renderTable(currentPage);
         renderPagination(currentPage);
 
       } catch (err) {
+
         console.error(err);
+
         tbody.innerHTML = `
-        <tr>
-          <td colspan="3">데이터를 불러오지 못했습니다. (콘솔을 확인해주세요)</td>
-        </tr>
-      `;
+                <tr>
+                    <td colspan="3">
+                        데이터를 불러오지 못했습니다.
+                    </td>
+                </tr>
+            `;
+
         pagination.innerHTML = "";
       }
     }
 
     function renderTable(page) {
-      const total = ALL_PERFORMANCE.length;
-      const start = (page - 1) * PER_PAGE;
-      const end = Math.min(start + PER_PAGE, total);
 
-      tbody.innerHTML = ALL_PERFORMANCE.slice(start, end).map((item) => `
-      <tr>
-        <td>${item.date || ""}</td>
-        <td>${item.title || ""}</td>
-        <td>${item.client || ""}</td>
-      </tr>
-    `).join("");
+      const total =
+        ALL_PERFORMANCE.length;
+
+      const start =
+        (page - 1) * PER_PAGE;
+
+      const end =
+        Math.min(start + PER_PAGE, total);
+
+      tbody.innerHTML =
+        ALL_PERFORMANCE
+          .slice(start, end)
+          .map((item) => `
+                    <tr>
+                        <td>${item.date || ""}</td>
+                        <td>${item.title || ""}</td>
+                        <td>${item.client || ""}</td>
+                    </tr>
+                `)
+          .join("");
     }
 
     function renderPagination(page) {
-      const totalPages = Math.ceil(ALL_PERFORMANCE.length / PER_PAGE);
+
+      const totalPages =
+        Math.ceil(
+          ALL_PERFORMANCE.length / PER_PAGE
+        );
 
       if (totalPages <= 1) {
         pagination.innerHTML = "";
@@ -177,45 +229,106 @@
       }
 
       const windowSize = 7;
-      let start = Math.max(1, page - Math.floor(windowSize / 2));
-      let end = Math.min(totalPages, start + windowSize - 1);
-      start = Math.max(1, end - windowSize + 1);
 
-      const prevDisabled = page === 1 ? "disabled" : "";
-      const nextDisabled = page === totalPages ? "disabled" : "";
+      let start =
+        Math.max(
+          1,
+          page - Math.floor(windowSize / 2)
+        );
+
+      let end =
+        Math.min(
+          totalPages,
+          start + windowSize - 1
+        );
+
+      start =
+        Math.max(
+          1,
+          end - windowSize + 1
+        );
+
+      const prevDisabled =
+        page === 1 ? "disabled" : "";
+
+      const nextDisabled =
+        page === totalPages ? "disabled" : "";
 
       let html = "";
-      html += `<a href="#" class="${prevDisabled}" data-page="${page - 1}">이전</a>`;
+
+      html += `
+            <a href="#"
+               class="${prevDisabled}"
+               data-page="${page - 1}">
+               이전
+            </a>
+        `;
 
       for (let p = start; p <= end; p++) {
-        const active = p === page ? "active" : "";
-        html += `<a href="#" class="${active}" data-page="${p}">${p}</a>`;
+
+        const active =
+          p === page ? "active" : "";
+
+        html += `
+                <a href="#"
+                   class="${active}"
+                   data-page="${p}">
+                   ${p}
+                </a>
+            `;
       }
 
-      html += `<a href="#" class="${nextDisabled}" data-page="${page + 1}">다음</a>`;
+      html += `
+            <a href="#"
+               class="${nextDisabled}"
+               data-page="${page + 1}">
+               다음
+            </a>
+        `;
+
       pagination.innerHTML = html;
     }
 
     pagination.addEventListener("click", (e) => {
-      const a = e.target.closest("a");
+
+      const a =
+        e.target.closest("a");
+
       if (!a) return;
+
       e.preventDefault();
 
-      if (a.classList.contains("disabled")) return;
+      if (a.classList.contains("disabled")) {
+        return;
+      }
 
-      const totalPages = Math.ceil(ALL_PERFORMANCE.length / PER_PAGE);
-      const page = Number(a.dataset.page);
+      const totalPages =
+        Math.ceil(
+          ALL_PERFORMANCE.length / PER_PAGE
+        );
 
-      if (page < 1 || page > totalPages) return;
+      const page =
+        Number(a.dataset.page);
+
+      if (page < 1 || page > totalPages) {
+        return;
+      }
 
       currentPage = page;
+
       renderTable(currentPage);
       renderPagination(currentPage);
 
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      window.scrollTo({
+        top: 0,
+        behavior: "smooth"
+      });
     });
 
-    document.addEventListener("DOMContentLoaded", loadPerformance);
+    document.addEventListener(
+      "DOMContentLoaded",
+      loadPerformance
+    );
   </script>
 </body>
 

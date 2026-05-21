@@ -47,43 +47,56 @@
     </section>
   </main>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="/js/01_supabase.js"></script>
+  <script type="module" src="/js/01_firebase.js"></script>
 
-  <script>
+  <script type="module">
     /* =========================
        공지 작성
     ========================= */
-    document.addEventListener("DOMContentLoaded", async () => {
-      const { data: { session } } = await window.supabaseClient.auth.getSession();
-      if (!session) {
-        location.href = "/06_admin/01_admin_login.html";
-        return;
-      }
+    import { auth, db } from "/js/01_firebase.js";
+    import {
+      onAuthStateChanged
+    } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-auth.js";
+    import {
+      collection,
+      addDoc,
+      serverTimestamp
+    } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js";
 
-      const form = document.getElementById("noticeWriteForm");
-      form.addEventListener("submit", async (e) => {
-        e.preventDefault();
-
-        const title = document.getElementById("noticeTitle").value.trim();
-        const content = document.getElementById("noticeContent").value.trim();
-
-        if (!title || !content) {
-          alert("제목/내용을 입력해주세요.");
+    document.addEventListener("DOMContentLoaded", () => {
+      onAuthStateChanged(auth, (user) => {
+        if (!user) {
+          location.href = "/06_admin/01_admin_login.html";
           return;
         }
 
-        const { error } = await window.supabaseClient
-          .from("notices")
-          .insert([{ title, content }]);
+        const form = document.getElementById("noticeWriteForm");
 
-        if (error) {
-          alert("저장 실패: " + error.message);
-          return;
-        }
+        form.addEventListener("submit", async (e) => {
+          e.preventDefault();
 
-        alert("등록 완료");
-        location.href = "/06_admin/04_notice_manage.html";
+          const title = document.getElementById("noticeTitle").value.trim();
+          const content = document.getElementById("noticeContent").value.trim();
+
+          if (!title || !content) {
+            alert("제목/내용을 입력해주세요.");
+            return;
+          }
+
+          try {
+            await addDoc(collection(db, "notices"), {
+              title,
+              content,
+              created_at: serverTimestamp()
+            });
+
+            alert("등록 완료");
+            location.href = "/06_admin/04_notice_manage.html";
+          } catch (error) {
+            console.error(error);
+            alert("저장 실패: " + error.message);
+          }
+        });
       });
     });
   </script>

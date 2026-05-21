@@ -50,60 +50,46 @@
     <!-- ===== 공통 푸터 삽입 영역 ===== -->
     <div id="app-footer"></div>
 
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="/js/01_supabase.js"></script>
+    <script type="module" src="/js/01_firebase.js"></script>
     <script src="/js/00_common.js"></script>
 
-    <script>
-        /* =========================
-           자료실 목록 렌더
-           - 테이블명: library_items (추후 생성)
-           - 컬럼 예시: id, title, created_at
-        ========================= */
-        function formatDate(iso) {
-            const d = new Date(iso);
-            const y = d.getFullYear();
-            const m = String(d.getMonth() + 1).padStart(2, "0");
-            const day = String(d.getDate()).padStart(2, "0");
-            return `${y}-${m}-${day}`;
+    <script type="module">
+        import { db } from "/js/01_firebase.js";
+        import { collection, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js";
+
+        function formatDate(value) {
+            const d = value?.toDate ? value.toDate() : new Date(value);
+            return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
         }
 
         document.addEventListener("DOMContentLoaded", async () => {
             const listEl = document.getElementById("libraryList");
             if (!listEl) return;
 
-            const { data, error } = await window.supabaseClient
-                .from("library_items") // 자료실 테이블명
-                .select("id, title, created_at")
-                .order("id", { ascending: false });
+            try {
+                const q = query(collection(db, "library_items"), orderBy("created_at", "desc"));
+                const snap = await getDocs(q);
 
-            if (error) {
+                if (snap.empty) {
+                    listEl.innerHTML = `<div class="notice-item"><div class="notice-title">등록된 자료가 없습니다.</div></div>`;
+                    return;
+                }
+
+                listEl.innerHTML = snap.docs.map(d => {
+                    const row = { id: d.id, ...d.data() };
+                    return `
+          <div class="notice-item">
+            <div class="notice-title">
+              <a href="/05_notice/06_library_view.html?id=${row.id}">${row.title}</a>
+            </div>
+            <div class="notice-date">${formatDate(row.created_at)}</div>
+          </div>
+        `;
+                }).join("");
+            } catch (error) {
                 console.error(error);
-                listEl.innerHTML = `
-      <div class="notice-item">
-        <div class="notice-title">자료실을 불러오지 못했습니다.</div>
-      </div>
-    `;
-                return;
+                listEl.innerHTML = `<div class="notice-item"><div class="notice-title">자료실을 불러오지 못했습니다.</div></div>`;
             }
-
-            if (!data || data.length === 0) {
-                listEl.innerHTML = `
-      <div class="notice-item">
-        <div class="notice-title">등록된 자료가 없습니다.</div>
-      </div>
-    `;
-                return;
-            }
-
-            listEl.innerHTML = data.map(row => `
-    <div class="notice-item">
-      <div class="notice-title">
-        <a href="/05_notice/06_library_view.html?id=${row.id}">${row.title}</a>
-      </div>
-      <div class="notice-date">${formatDate(row.created_at)}</div>
-    </div>
-  `).join("");
         });
     </script>
 

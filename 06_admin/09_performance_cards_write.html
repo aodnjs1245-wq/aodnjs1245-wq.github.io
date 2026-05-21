@@ -147,25 +147,26 @@
         </section>
     </main>
 
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="/js/01_supabase.js"></script>
+    <script type="module" src="/js/01_firebase.js"></script>
 
-    <script>
+    <script type="module">
         /* =========================
-           로그인 체크
+           실적 카드 작성
         ========================= */
-        async function requireAdmin() {
-            const { data: { session } } = await window.supabaseClient.auth.getSession();
-            if (!session) {
-                location.href = "/06_admin/01_admin_login.html";
-                return false;
-            }
-            return true;
-        }
+        import { auth, db, storage } from "/js/01_firebase.js";
+        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-auth.js";
+        import {
+            collection,
+            addDoc,
+            serverTimestamp
+        } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js";
+        import {
+            ref,
+            uploadBytes,
+            getDownloadURL
+        } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-storage.js";
 
-        /* =========================
-           XSS 최소 방지
-        ========================= */
+        /* XSS 최소 방지 */
         function escapeHtml(str) {
             return String(str ?? "")
                 .replaceAll("&", "&amp;")
@@ -175,9 +176,7 @@
                 .replaceAll("'", "&#039;");
         }
 
-        /* =========================
-           프리뷰 렌더
-        ========================= */
+        /* 프리뷰 렌더 */
         function renderPreview() {
             const category = document.getElementById("category").value;
             const title = document.getElementById("title").value.trim() || "프로젝트 제목이 여기에 표시됩니다";
@@ -193,11 +192,11 @@
                 const scale = document.getElementById("k_scale").value.trim();
 
                 ul.innerHTML = `
-          <li><strong>공사일자</strong>${escapeHtml(workDate || "예) 2021.06")}</li>
-          <li><strong>발&nbsp;주&nbsp;처</strong>${escapeHtml(client || "예) 발주처 입력")}</li>
-          <li><strong>시&nbsp;공&nbsp;사</strong>${escapeHtml(contractor || "예) 시공사 입력")}</li>
-          <li><strong>규&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;모</strong>${escapeHtml(scale || "예) PV-60MW")}</li>
-        `;
+                <li><strong>공사일자</strong>${escapeHtml(workDate || "예) 2021.06")}</li>
+                <li><strong>발&nbsp;주&nbsp;처</strong>${escapeHtml(client || "예) 발주처 입력")}</li>
+                <li><strong>시&nbsp;공&nbsp;사</strong>${escapeHtml(contractor || "예) 시공사 입력")}</li>
+                <li><strong>규&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;모</strong>${escapeHtml(scale || "예) PV-60MW")}</li>
+            `;
                 return;
             }
 
@@ -210,43 +209,47 @@
                 .replaceAll("\n", "<br>");
 
             ul.innerHTML = `
-        <li><strong>운영기간</strong>${escapeHtml(period || "예) 2025.04 ~ 2045.03(20년)")}</li>
-        <li><strong>설비용량</strong>${escapeHtml(capacity || "예) PV-60MW")}</li>
-        <li><strong>발&nbsp;주&nbsp;처</strong>${escapeHtml(client || "예) 발주처 입력")}</li>
-        <li><strong>주요업무</strong>${tasksHtml}</li>
-      `;
+            <li><strong>운영기간</strong>${escapeHtml(period || "예) 2025.04 ~ 2045.03(20년)")}</li>
+            <li><strong>설비용량</strong>${escapeHtml(capacity || "예) PV-60MW")}</li>
+            <li><strong>발&nbsp;주&nbsp;처</strong>${escapeHtml(client || "예) 발주처 입력")}</li>
+            <li><strong>주요업무</strong>${tasksHtml}</li>
+        `;
         }
 
-        /* =========================
-           카테고리 전환
-        ========================= */
+        /* 카테고리 전환 */
         function syncCategoryUI() {
             const category = document.getElementById("category").value;
-            document.getElementById("fieldsKey").style.display = (category === "key") ? "block" : "none";
-            document.getElementById("fieldsMaintenance").style.display = (category === "maintenance") ? "block" : "none";
+
+            document.getElementById("fieldsKey").style.display =
+                category === "key" ? "block" : "none";
+
+            document.getElementById("fieldsMaintenance").style.display =
+                category === "maintenance" ? "block" : "none";
+
             renderPreview();
         }
 
-        /* =========================
-           이미지 프리뷰
-        ========================= */
+        /* 이미지 프리뷰 */
         function bindImagePreview() {
             const input = document.getElementById("imageFile");
+
             input.addEventListener("change", () => {
                 const file = input.files && input.files[0];
                 if (!file) return;
+
                 const url = URL.createObjectURL(file);
                 document.getElementById("previewImg").src = url;
             });
         }
 
-        /* =========================
-   Storage 업로드(이미지) - url + path 반환
-========================= */
+        /* 이미지 업로드 */
         async function uploadImageIfAny(category) {
             const input = document.getElementById("imageFile");
             const file = input.files && input.files[0];
-            if (!file) return { image_url: null, image_path: null }; // 이미지 없음
+
+            if (!file) {
+                return { image_url: null, image_path: null };
+            }
 
             if (file.size > 5 * 1024 * 1024) {
                 alert("이미지는 5MB 이하로 올려주세요.");
@@ -255,31 +258,23 @@
 
             const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
             const safeExt = ["jpg", "jpeg", "png", "webp"].includes(ext) ? ext : "jpg";
+            const path = `performance/cards/${category}/${Date.now()}.${safeExt}`;
 
-            const now = Date.now();
-            const path = `cards/${category}/${now}.${safeExt}`; // 경로 단순화
+            const storageRef = ref(storage, path);
 
-            const { error: upErr } = await window.supabaseClient
-                .storage
-                .from("performance")
-                .upload(path, file, { upsert: true, contentType: file.type });
+            await uploadBytes(storageRef, file, {
+                contentType: file.type
+            });
 
-            if (upErr) {
-                console.error(upErr);
-                alert("이미지 업로드 실패: " + upErr.message);
-                return { image_url: null, image_path: null };
-            }
+            const image_url = await getDownloadURL(storageRef);
 
-            const { data } = window.supabaseClient
-                .storage
-                .from("performance")
-                .getPublicUrl(path);
-
-            return { image_url: data?.publicUrl || null, image_path: path };
+            return {
+                image_url,
+                image_path: path
+            };
         }
-        /* =========================
-    저장
- ========================= */
+
+        /* 저장 */
         async function handleSubmit(e) {
             e.preventDefault();
 
@@ -292,7 +287,8 @@
                 return;
             }
 
-            let fields = {}; // fields 먼저 준비
+            let fields = {};
+
             if (category === "key") {
                 fields = {
                     work_date: document.getElementById("k_workDate").value.trim() || null,
@@ -309,52 +305,35 @@
                 };
             }
 
-            const img = await uploadImageIfAny(category); // 이미지 업로드 후 url/path 받기
+            try {
+                const img = await uploadImageIfAny(category);
 
-            const payload = { category, title, fields }; // payload는 딱 1번만 생성
+                const payload = {
+                    category,
+                    title,
+                    fields,
+                    created_at: serverTimestamp()
+                };
 
-            const sort_key = Number(sortKeyRaw);
-            if (sortKeyRaw && Number.isFinite(sort_key)) payload.sort_key = sort_key;
+                const sort_key = Number(sortKeyRaw);
+                if (sortKeyRaw && Number.isFinite(sort_key)) {
+                    payload.sort_key = sort_key;
+                }
 
-            if (img?.image_url) payload.image_url = img.image_url;   // 이미지 URL 저장
-            if (img?.image_path) payload.image_path = img.image_path; // 삭제용 path 저장
+                if (img.image_url) payload.image_url = img.image_url;
+                if (img.image_path) payload.image_path = img.image_path;
 
-            const { error } = await window.supabaseClient
-                .from("performance_cards")
-                .insert([payload]);
+                await addDoc(collection(db, "performance_cards"), payload);
 
-            if (error) {
+                alert("등록 완료");
+                location.href = "/06_admin/10_performance_cards_manage.html";
+            } catch (error) {
                 console.error(error);
                 alert("저장 실패: " + error.message);
-                return;
             }
-
-            alert("등록 완료");
-            location.href = "/06_admin/10_performance_cards_manage.html";
         }
 
-
-        /* =========================
-           초기 실행
-        ========================= */
-        document.addEventListener("DOMContentLoaded", async () => {
-            const ok = await requireAdmin();
-            if (!ok) return;
-
-            document.getElementById("category").addEventListener("change", syncCategoryUI);
-
-            ["title", "k_workDate", "k_client", "k_contractor", "k_scale", "m_period", "m_capacity", "m_client", "m_tasks"]
-                .forEach(id => {
-                    const el = document.getElementById(id);
-                    if (el) el.addEventListener("input", renderPreview);
-                });
-
-            bindImagePreview();
-            syncCategoryUI();
-            bindOptionalFields();
-            document.getElementById("cardWriteForm").addEventListener("submit", handleSubmit);
-        });
-
+        /* 선택 필드 */
         function bindOptionalFields() {
             const kHas = document.getElementById("k_hasScale");
             const kInput = document.getElementById("k_scale");
@@ -378,8 +357,40 @@
                 });
             }
         }
-    </script>
 
+        /* 초기 실행 */
+        document.addEventListener("DOMContentLoaded", () => {
+            onAuthStateChanged(auth, (user) => {
+                if (!user) {
+                    location.href = "/06_admin/01_admin_login.html";
+                    return;
+                }
+
+                document.getElementById("category").addEventListener("change", syncCategoryUI);
+
+                [
+                    "title",
+                    "k_workDate",
+                    "k_client",
+                    "k_contractor",
+                    "k_scale",
+                    "m_period",
+                    "m_capacity",
+                    "m_client",
+                    "m_tasks"
+                ].forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.addEventListener("input", renderPreview);
+                });
+
+                bindImagePreview();
+                syncCategoryUI();
+                bindOptionalFields();
+
+                document.getElementById("cardWriteForm").addEventListener("submit", handleSubmit);
+            });
+        });
+    </script>
 
 </body>
 

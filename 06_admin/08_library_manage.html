@@ -71,36 +71,46 @@
         </section>
     </main>
 
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="/js/01_supabase.js"></script>
+    <script type="module" src="/js/01_firebase.js"></script>
 
-    <script>
+    <script type="module">
         /* =========================
-           유틸
+           자료실 목록 관리
         ========================= */
-        function formatDate(iso) {
-            const d = new Date(iso);
+        import { auth, db, storage } from "/js/01_firebase.js";
+        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-auth.js";
+        import {
+            collection,
+            query,
+            orderBy,
+            getDocs,
+            doc,
+            getDoc,
+            updateDoc,
+            deleteDoc
+        } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js";
+        import {
+            ref,
+            deleteObject
+        } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-storage.js";
+
+        function formatDate(value) {
+            const d = value?.toDate ? value.toDate() : new Date(value);
             const y = d.getFullYear();
             const m = String(d.getMonth() + 1).padStart(2, "0");
             const day = String(d.getDate()).padStart(2, "0");
             return `${y}-${m}-${day}`;
         }
 
-        /* =========================
-           로그인 체크
-        ========================= */
-        async function requireAdmin() {
-            const { data: { session } } = await window.supabaseClient.auth.getSession();
-            if (!session) {
-                location.href = "/06_admin/01_admin_login.html";
-                return false;
-            }
-            return true;
+        function escapeHtml(str) {
+            return String(str ?? "")
+                .replaceAll("&", "&amp;")
+                .replaceAll("<", "&lt;")
+                .replaceAll(">", "&gt;")
+                .replaceAll('"', "&quot;")
+                .replaceAll("'", "&#039;");
         }
 
-        /* =========================
-           수정 패널
-        ========================= */
         function openEdit(row) {
             document.getElementById("editPanel").style.display = "block";
             document.getElementById("editId").value = row.id;
@@ -108,6 +118,7 @@
             document.getElementById("editContent").value = row.content || "";
             window.scrollTo({ top: 0, behavior: "smooth" });
         }
+
         function closeEdit() {
             document.getElementById("editPanel").style.display = "none";
             document.getElementById("editId").value = "";
@@ -115,135 +126,157 @@
             document.getElementById("editContent").value = "";
         }
 
-        /* =========================
-           목록 로드/렌더
-        ========================= */
         async function loadLibrary() {
             const wrap = document.getElementById("libraryAdminList");
 
-            const { data, error } = await window.supabaseClient
-                .from("library_items")
-                .select("id, title, content, created_at, file_url, file_name, file_size")
-                .order("id", { ascending: false });
+            try {
+                const q = query(
+                    collection(db, "library_items"),
+                    orderBy("created_at", "desc")
+                );
 
-            if (error) {
+                const snap = await getDocs(q);
+
+                if (snap.empty) {
+                    wrap.innerHTML = `<div class="admin-panel__text">등록된 자료가 없습니다.</div>`;
+                    return;
+                }
+
+                const rows = snap.docs.map((d) => ({
+                    id: d.id,
+                    ...d.data()
+                }));
+
+                wrap.innerHTML = rows.map(row => `
+                <div class="lib-row">
+                    <div class="lib-main">
+                        <div class="lib-title">${escapeHtml(row.title)}</div>
+
+                        <div class="lib-meta">
+                            작성일: ${formatDate(row.created_at)} · ID: ${row.id}
+                        </div>
+
+                        <div class="lib-snippet">
+                            ${escapeHtml(String(row.content || "").slice(0, 120)).replaceAll("\n", "<br>")}
+                            ${String(row.content || "").length > 120 ? "..." : ""}
+                        </div>
+
+                        <div class="lib-file">
+                            첨부:
+                            ${row.file_url
+                        ? `<a href="${row.file_url}" target="_blank" rel="noopener" class="lib-filelink">${escapeHtml(row.file_name || "첨부파일")}</a>`
+                        : "없음"
+                    }
+                        </div>
+                    </div>
+
+                    <div class="lib-actions">
+                        <a class="admin-btn admin-btn--ghost" href="/05_notice/06_library_view.html?id=${row.id}" target="_blank" rel="noopener">보기</a>
+                        <button class="admin-btn admin-btn--ghost" data-action="edit" data-id="${row.id}" type="button">수정</button>
+                        <button class="admin-btn admin-btn--danger" data-action="delete" data-id="${row.id}" type="button">삭제</button>
+                    </div>
+                </div>
+            `).join("");
+            } catch (error) {
                 console.error(error);
                 wrap.innerHTML = `<div class="admin-panel__text">목록을 불러오지 못했습니다.</div>`;
-                return;
             }
-
-            if (!data || data.length === 0) {
-                wrap.innerHTML = `<div class="admin-panel__text">등록된 자료가 없습니다.</div>`;
-                return;
-            }
-
-            wrap.innerHTML = data.map(row => `
-    <div style="display:flex; gap:10px; align-items:flex-start; padding:12px 0; border-bottom:1px solid #e5e7eb;">
-      <div style="flex:1 1 auto;">
-        <div style="font-weight:800; color:#374151; margin-bottom:6px;">
-          ${row.title}
-        </div>
-        <div style="font-size:12px; color:#6b7280;">
-          작성일: ${formatDate(row.created_at)} · ID: ${row.id}
-        </div>
-        <div style="margin-top:8px; font-size:13px; color:#6b7280; line-height:1.6;">
-          ${(String(row.content || "").slice(0, 120).replaceAll("\n", "<br>"))}${String(row.content || "").length > 120 ? "..." : ""}
-        </div>
-        <div style="margin-top:8px; font-size:13px; color:#6b7280;">
-          첨부: ${row.file_url ? `<a href="${row.file_url}" target="_blank" rel="noopener" style="text-decoration:underline;">${row.file_name || "첨부파일"}</a>` : "없음"}
-        </div>
-      </div>
-
-      <div style="display:flex; gap:8px; flex:0 0 auto;">
-        <a class="admin-btn admin-btn--ghost" href="/05_notice/06_library_view.html?id=${row.id}" target="_blank" rel="noopener">보기</a>
-        <button class="admin-btn admin-btn--ghost" data-action="edit" data-id="${row.id}">수정</button>
-        <button class="admin-btn admin-btn--danger" data-action="delete" data-id="${row.id}">삭제</button>
-      </div>
-    </div>
-  `).join("");
         }
 
-        /* =========================
-           초기 실행/이벤트
-        ========================= */
-        document.addEventListener("DOMContentLoaded", async () => {
-            const ok = await requireAdmin();
-            if (!ok) return;
+        async function deleteStorageFile(filePath) {
+            if (!filePath) return;
 
-            await loadLibrary();
+            try {
+                await deleteObject(ref(storage, filePath));
+            } catch (error) {
+                console.warn("DB는 삭제됐지만 파일 삭제 실패:", error);
+            }
+        }
 
-            document.getElementById("btnCancelEdit").addEventListener("click", closeEdit);
-
-            document.getElementById("editForm").addEventListener("submit", async (e) => {
-                e.preventDefault();
-
-                const id = Number(document.getElementById("editId").value);
-                const title = document.getElementById("editTitle").value.trim();
-                const content = document.getElementById("editContent").value.trim();
-
-                if (!id || !title) {
-                    alert("제목은 필수입니다.");
+        document.addEventListener("DOMContentLoaded", () => {
+            onAuthStateChanged(auth, async (user) => {
+                if (!user) {
+                    location.href = "/06_admin/01_admin_login.html";
                     return;
                 }
 
-                const { error } = await window.supabaseClient
-                    .from("library_items")
-                    .update({ title, content: content || null })
-                    .eq("id", id);
-
-                if (error) {
-                    console.error(error);
-                    alert("수정 실패: 권한(RLS) 또는 입력값을 확인해주세요.");
-                    return;
-                }
-
-                alert("수정 완료");
-                closeEdit();
                 await loadLibrary();
-            });
 
-            document.getElementById("libraryAdminList").addEventListener("click", async (e) => {
-                const btn = e.target.closest("button[data-action]");
-                if (!btn) return;
+                document.getElementById("btnCancelEdit").addEventListener("click", closeEdit);
 
-                const action = btn.dataset.action;
-                const id = Number(btn.dataset.id);
+                document.getElementById("editForm").addEventListener("submit", async (e) => {
+                    e.preventDefault();
 
-                if (action === "edit") {
-                    const { data, error } = await window.supabaseClient
-                        .from("library_items")
-                        .select("id, title, content")
-                        .eq("id", id)
-                        .single();
+                    const id = document.getElementById("editId").value;
+                    const title = document.getElementById("editTitle").value.trim();
+                    const content = document.getElementById("editContent").value.trim();
 
-                    if (error || !data) {
-                        console.error(error);
-                        alert("수정 데이터를 불러오지 못했습니다.");
-                        return;
-                    }
-                    openEdit(data);
-                    return;
-                }
-
-                if (action === "delete") {
-                    const yes = confirm("정말 삭제할까요? 삭제하면 되돌릴 수 없습니다.");
-                    if (!yes) return;
-
-                    const { error } = await window.supabaseClient
-                        .from("library_items")
-                        .delete()
-                        .eq("id", id);
-
-                    if (error) {
-                        console.error(error);
-                        alert("삭제 실패: 권한(RLS)을 확인해주세요.");
+                    if (!id || !title) {
+                        alert("제목은 필수입니다.");
                         return;
                     }
 
-                    alert("삭제 완료");
-                    closeEdit();
-                    await loadLibrary();
-                }
+                    try {
+                        await updateDoc(doc(db, "library_items", id), {
+                            title,
+                            content: content || null
+                        });
+
+                        alert("수정 완료");
+                        closeEdit();
+                        await loadLibrary();
+                    } catch (error) {
+                        console.error(error);
+                        alert("수정 실패: " + error.message);
+                    }
+                });
+
+                document.getElementById("libraryAdminList").addEventListener("click", async (e) => {
+                    const btn = e.target.closest("button[data-action]");
+                    if (!btn) return;
+
+                    const action = btn.dataset.action;
+                    const id = btn.dataset.id;
+
+                    if (action === "edit") {
+                        const snap = await getDoc(doc(db, "library_items", id));
+
+                        if (!snap.exists()) {
+                            alert("수정 데이터를 불러오지 못했습니다.");
+                            return;
+                        }
+
+                        openEdit({
+                            id: snap.id,
+                            ...snap.data()
+                        });
+
+                        return;
+                    }
+
+                    if (action === "delete") {
+                        const yes = confirm("정말 삭제할까요? 삭제하면 되돌릴 수 없습니다.");
+                        if (!yes) return;
+
+                        try {
+                            const snap = await getDoc(doc(db, "library_items", id));
+                            const row = snap.exists() ? snap.data() : null;
+
+                            await deleteDoc(doc(db, "library_items", id));
+
+                            if (row?.file_path) {
+                                await deleteStorageFile(row.file_path);
+                            }
+
+                            alert("삭제 완료");
+                            closeEdit();
+                            await loadLibrary();
+                        } catch (error) {
+                            console.error(error);
+                            alert("삭제 실패: " + error.message);
+                        }
+                    }
+                });
             });
         });
     </script>

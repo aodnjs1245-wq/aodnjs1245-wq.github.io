@@ -140,63 +140,80 @@
             </div>
         </section>
     </main>
-
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="/js/01_supabase.js"></script>
-
-    <script>
+    <script type="module" src="/js/01_firebase.js"></script>
+    <script type="module">
         /* =========================
-           유틸
+           실적 카드 관리
         ========================= */
-        function formatDate(iso) {
-            const d = new Date(iso);
+
+        import { auth, db, storage } from "/js/01_firebase.js";
+
+        import {
+            onAuthStateChanged
+        } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-auth.js";
+
+        import {
+            collection,
+            query,
+            orderBy,
+            getDocs,
+            doc,
+            getDoc,
+            updateDoc,
+            deleteDoc
+        } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js";
+
+        import {
+            ref,
+            uploadBytes,
+            getDownloadURL,
+            deleteObject
+        } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-storage.js";
+
+        /* 날짜 포맷 */
+        function formatDate(value) {
+
+            const d = value?.toDate
+                ? value.toDate()
+                : new Date(value);
+
             const y = d.getFullYear();
             const m = String(d.getMonth() + 1).padStart(2, "0");
             const day = String(d.getDate()).padStart(2, "0");
+
             return `${y}-${m}-${day}`;
         }
 
-        /* =========================
-           로그인 체크
-        ========================= */
-        async function requireAdmin() {
-            const { data: { session } } = await window.supabaseClient.auth.getSession();
-            if (!session) {
-                location.href = "/06_admin/01_admin_login.html";
-                return false;
-            }
-            return true;
-        }
-
-        /* =========================
-           카테고리 UI 토글
-        ========================= */
+        /* 카테고리 UI */
         function syncEditFieldsUI(category) {
-            const keyBox = document.getElementById("editFieldsKey");
-            const mBox = document.getElementById("editFieldsMaint");
-            if (category === "key") {
-                keyBox.style.display = "";
-                mBox.style.display = "none";
-            } else {
-                keyBox.style.display = "none";
-                mBox.style.display = "";
-            }
+
+            document.getElementById("editFieldsKey").style.display =
+                category === "key" ? "" : "none";
+
+            document.getElementById("editFieldsMaint").style.display =
+                category === "maintenance" ? "" : "none";
         }
 
-        /* =========================
-           수정 패널 열기/닫기
-        ========================= */
+        /* 수정창 열기 */
         function openEdit(row) {
+
             document.getElementById("editPanel").style.display = "block";
+
             document.getElementById("editId").value = row.id;
             document.getElementById("editCategory").value = row.category;
             document.getElementById("editTitle").value = row.title || "";
-            document.getElementById("editSortKey").value = (row.sort_key ?? "");
-            document.getElementById("editOldImagePath").value = row.image_path || "";
-            document.getElementById("editRemoveImage").checked = false;
-            document.getElementById("editImageFile").value = "";
 
-            const preview = document.getElementById("editImagePreview");
+            document.getElementById("editSortKey").value =
+                row.sort_key ?? "";
+
+            document.getElementById("editOldImagePath").value =
+                row.image_path || "";
+
+            document.getElementById("editRemoveImage").checked = false;
+
+            const preview =
+                document.getElementById("editImagePreview");
+
             if (row.image_url) {
                 preview.src = row.image_url;
                 preview.style.display = "block";
@@ -206,283 +223,464 @@
             }
 
             const f = row.fields || {};
-            document.getElementById("k_workDate").value = f.work_date || "";
-            document.getElementById("k_client").value = f.client || "";
-            document.getElementById("k_contractor").value = f.contractor || "";
-            document.getElementById("k_scale").value = f.scale || "";
 
-            document.getElementById("m_period").value = f.period || "";
-            document.getElementById("m_capacity").value = f.capacity || "";
-            document.getElementById("m_client").value = f.client || "";
-            document.getElementById("m_tasks").value = f.tasks || "";
+            document.getElementById("k_workDate").value =
+                f.work_date || "";
+
+            document.getElementById("k_client").value =
+                f.client || "";
+
+            document.getElementById("k_contractor").value =
+                f.contractor || "";
+
+            document.getElementById("k_scale").value =
+                f.scale || "";
+
+            document.getElementById("m_period").value =
+                f.period || "";
+
+            document.getElementById("m_capacity").value =
+                f.capacity || "";
+
+            document.getElementById("m_client").value =
+                f.client || "";
+
+            document.getElementById("m_tasks").value =
+                f.tasks || "";
 
             syncEditFieldsUI(row.category);
-            window.scrollTo({ top: 0, behavior: "smooth" });
+
+            window.scrollTo({
+                top: 0,
+                behavior: "smooth"
+            });
         }
 
+        /* 수정창 닫기 */
         function closeEdit() {
+
             document.getElementById("editPanel").style.display = "none";
+
             document.getElementById("editId").value = "";
             document.getElementById("editOldImagePath").value = "";
         }
 
-        /* =========================
-           이미지 업로드(수정용)
-        ========================= */
+        /* 이미지 업로드 */
         async function uploadEditImageIfAny(category) {
-            const input = document.getElementById("editImageFile");
-            const file = input.files && input.files[0];
-            if (!file) return { image_url: null, image_path: null };
+
+            const input =
+                document.getElementById("editImageFile");
+
+            const file =
+                input.files && input.files[0];
+
+            if (!file) {
+                return {
+                    image_url: null,
+                    image_path: null
+                };
+            }
 
             if (file.size > 5 * 1024 * 1024) {
                 alert("이미지는 5MB 이하로 올려주세요.");
-                return { image_url: null, image_path: null };
+                return {
+                    image_url: null,
+                    image_path: null
+                };
             }
 
-            const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
-            const safeExt = ["jpg", "jpeg", "png", "webp"].includes(ext) ? ext : "jpg";
-            const now = Date.now();
-            const path = `cards/${category}/${now}.${safeExt}`;
+            const ext =
+                (file.name.split(".").pop() || "jpg").toLowerCase();
 
-            const { error: upErr } = await window.supabaseClient
-                .storage
-                .from("performance")
-                .upload(path, file, { upsert: true, contentType: file.type });
+            const safeExt =
+                ["jpg", "jpeg", "png", "webp"].includes(ext)
+                    ? ext
+                    : "jpg";
 
-            if (upErr) {
-                console.error(upErr);
-                alert("이미지 업로드 실패: " + upErr.message);
-                return { image_url: null, image_path: null };
-            }
+            const path =
+                `performance/cards/${category}/${Date.now()}.${safeExt}`;
 
-            const { data } = window.supabaseClient
-                .storage
-                .from("performance")
-                .getPublicUrl(path);
+            const storageRef = ref(storage, path);
 
-            return { image_url: data?.publicUrl || null, image_path: path };
+            await uploadBytes(storageRef, file, {
+                contentType: file.type
+            });
+
+            const image_url =
+                await getDownloadURL(storageRef);
+
+            return {
+                image_url,
+                image_path: path
+            };
         }
 
-        /* =========================
-           목록 로드/렌더
-        ========================= */
+        /* 목록 로드 */
         async function loadList() {
-            const wrap = document.getElementById("cardList");
 
-            const { data, error } = await window.supabaseClient
-                .from("performance_cards")
-                .select("id, category, title, created_at, image_url, image_path, sort_key")
-                .order("sort_key", { ascending: false })
-                .order("created_at", { ascending: false });
+            const wrap =
+                document.getElementById("cardList");
 
-            if (error) {
+            try {
+
+                const q = query(
+                    collection(db, "performance_cards"),
+                    orderBy("created_at", "desc")
+                );
+
+                const snap = await getDocs(q);
+
+                if (snap.empty) {
+
+                    wrap.innerHTML =
+                        `<div class="admin-panel__text">등록된 카드가 없습니다.</div>`;
+
+                    return;
+                }
+
+                const rows = snap.docs.map((d) => ({
+                    id: d.id,
+                    ...d.data()
+                }));
+
+                rows.sort((a, b) => {
+                    const aKey = Number(a.sort_key || 0);
+                    const bKey = Number(b.sort_key || 0);
+
+                    if (bKey !== aKey) return bKey - aKey;
+
+                    const aTime = a.created_at?.toDate ? a.created_at.toDate().getTime() : 0;
+                    const bTime = b.created_at?.toDate ? b.created_at.toDate().getTime() : 0;
+
+                    return bTime - aTime;
+                });
+
+                wrap.innerHTML = rows.map(row => {
+
+                    const catText =
+                        row.category === "key"
+                            ? "주요실적"
+                            : "운영/경상정비";
+
+                    const thumb =
+                        row.image_url
+                            ? `<img src="${row.image_url}" alt="" class="card-thumb">`
+                            : `<div class="card-thumb card-thumb--empty"></div>`;
+
+                    return `
+                    <div class="card-row">
+
+                        <div class="card-thumb-wrap">
+                            ${thumb}
+                        </div>
+
+                        <div class="card-body">
+                            <div class="card-title">
+                                ${row.title}
+                            </div>
+
+                            <div class="card-meta">
+                                구분: ${catText}
+                                · 작성일: ${formatDate(row.created_at)}
+                                · ID: ${row.id}
+                                ${row.sort_key ? ` · 정렬: ${row.sort_key}` : ""}
+                            </div>
+                        </div>
+
+                        <div class="card-actions">
+                            <button class="admin-btn admin-btn--ghost"
+                                data-action="edit"
+                                data-id="${row.id}"
+                                type="button">
+                                수정
+                            </button>
+
+                            <button class="admin-btn admin-btn--danger"
+                                data-action="delete"
+                                data-id="${row.id}"
+                                type="button">
+                                삭제
+                            </button>
+                        </div>
+
+                    </div>
+                `;
+                }).join("");
+
+            } catch (error) {
+
                 console.error(error);
-                wrap.innerHTML = `<div class="admin-panel__text">목록을 불러오지 못했습니다.</div>`;
-                return;
+
+                wrap.innerHTML =
+                    `<div class="admin-panel__text">목록을 불러오지 못했습니다.</div>`;
             }
-
-            if (!data || data.length === 0) {
-                wrap.innerHTML = `<div class="admin-panel__text">등록된 카드가 없습니다.</div>`;
-                return;
-            }
-
-            wrap.innerHTML = data.map(row => {
-                const catText = row.category === "key" ? "주요실적" : "운영/경상정비";
-                const thumb = row.image_url
-                    ? `<img src="${row.image_url}" alt="" class="card-thumb">`
-                    : `<div class="card-thumb card-thumb--empty"></div>`;
-
-                return `
-          <div class="card-row">
-            <div class="card-thumb-wrap">${thumb}</div>
-
-            <div class="card-body">
-              <div class="card-title">${row.title}</div>
-              <div class="card-meta">
-                구분: ${catText} · 작성일: ${formatDate(row.created_at)} · ID: ${row.id}${row.sort_key ? ` · 정렬: ${row.sort_key}` : ""}
-              </div>
-            </div>
-
-            <div class="card-actions">
-              <button class="admin-btn admin-btn--ghost" data-action="edit" data-id="${row.id}" type="button">수정</button>
-              <button class="admin-btn admin-btn--danger" data-action="delete" data-id="${row.id}" type="button">삭제</button>
-            </div>
-          </div>
-        `;
-            }).join("");
         }
 
-        /* =========================
-           삭제(DB + 스토리지)
-        ========================= */
+        /* 삭제 */
         async function deleteRow(id) {
-            const yes = confirm("정말 삭제할까요? 삭제하면 되돌릴 수 없습니다.");
+
+            const yes =
+                confirm("정말 삭제할까요? 삭제하면 되돌릴 수 없습니다.");
+
             if (!yes) return;
 
-            const { data: row, error: oneErr } = await window.supabaseClient
-                .from("performance_cards")
-                .select("id, image_path")
-                .eq("id", id)
-                .single();
+            try {
 
-            if (oneErr) {
-                console.error(oneErr);
-                alert("삭제 대상 조회 실패: " + oneErr.message);
-                return;
+                const snap =
+                    await getDoc(doc(db, "performance_cards", id));
+
+                if (!snap.exists()) {
+                    alert("삭제 대상을 찾지 못했습니다.");
+                    return;
+                }
+
+                const row = snap.data();
+
+                await deleteDoc(
+                    doc(db, "performance_cards", id)
+                );
+
+                if (row?.image_path) {
+
+                    try {
+                        await deleteObject(
+                            ref(storage, row.image_path)
+                        );
+                    } catch (e) {
+                        console.warn("이미지 삭제 실패:", e);
+                    }
+                }
+
+                alert("삭제 완료");
+
+                closeEdit();
+
+                await loadList();
+
+            } catch (error) {
+
+                console.error(error);
+
+                alert("삭제 실패: " + error.message);
             }
-
-            const { error: delErr } = await window.supabaseClient
-                .from("performance_cards")
-                .delete()
-                .eq("id", id);
-
-            if (delErr) {
-                console.error(delErr);
-                alert("삭제 실패: " + delErr.message);
-                return;
-            }
-
-            if (row?.image_path) {
-                const { error: stErr } = await window.supabaseClient
-                    .storage
-                    .from("performance")
-                    .remove([row.image_path]);
-
-                if (stErr) console.warn("DB는 삭제됐지만 이미지 삭제 실패:", stErr);
-            }
-
-            alert("삭제 완료");
-            closeEdit();
-            await loadList();
         }
 
-        /* =========================
-           초기 실행/이벤트
-        ========================= */
-        document.addEventListener("DOMContentLoaded", async () => {
-            const ok = await requireAdmin();
-            if (!ok) return;
+        /* 초기 실행 */
+        document.addEventListener("DOMContentLoaded", () => {
 
-            await loadList();
+            onAuthStateChanged(auth, async (user) => {
 
-            document.getElementById("btnCancelEdit").addEventListener("click", closeEdit);
-
-            document.getElementById("editCategory").addEventListener("change", (e) => {
-                syncEditFieldsUI(e.target.value);
-            });
-
-            document.getElementById("editImageFile").addEventListener("change", (e) => {
-                const file = e.target.files && e.target.files[0];
-                const preview = document.getElementById("editImagePreview");
-                if (!file) return;
-
-                const url = URL.createObjectURL(file);
-                preview.src = url;
-                preview.style.display = "block";
-            });
-
-            document.getElementById("editForm").addEventListener("submit", async (e) => {
-                e.preventDefault();
-
-                const id = Number(document.getElementById("editId").value);
-                const category = document.getElementById("editCategory").value;
-                const title = document.getElementById("editTitle").value.trim();
-                const sortKeyRaw = document.getElementById("editSortKey").value.trim();
-                const oldPath = document.getElementById("editOldImagePath").value || "";
-                const removeImage = document.getElementById("editRemoveImage").checked;
-
-                if (!id || !title) {
-                    alert("프로젝트명은 필수입니다.");
+                if (!user) {
+                    location.href =
+                        "/06_admin/01_admin_login.html";
                     return;
                 }
 
-                let fields = {};
-                if (category === "key") {
-                    fields = {
-                        work_date: document.getElementById("k_workDate").value.trim() || null,
-                        client: document.getElementById("k_client").value.trim() || null,
-                        contractor: document.getElementById("k_contractor").value.trim() || null,
-                        scale: document.getElementById("k_scale").value.trim() || null
-                    };
-                } else {
-                    fields = {
-                        period: document.getElementById("m_period").value.trim() || null,
-                        capacity: document.getElementById("m_capacity").value.trim() || null,
-                        client: document.getElementById("m_client").value.trim() || null,
-                        tasks: document.getElementById("m_tasks").value.trim() || null
-                    };
-                }
-
-                const payload = { category, title, fields };
-
-                const sort_key = Number(sortKeyRaw);
-                if (sortKeyRaw && Number.isFinite(sort_key)) payload.sort_key = sort_key;
-                if (!sortKeyRaw) payload.sort_key = null;
-
-                let newPath = "";
-                if (removeImage) {
-                    payload.image_url = null;
-                    payload.image_path = null;
-                } else {
-                    const img = await uploadEditImageIfAny(category);
-                    if (img?.image_url && img?.image_path) {
-                        payload.image_url = img.image_url;
-                        payload.image_path = img.image_path;
-                        newPath = img.image_path;
-                    }
-                }
-
-                const { error } = await window.supabaseClient
-                    .from("performance_cards")
-                    .update(payload)
-                    .eq("id", id);
-
-                if (error) {
-                    console.error(error);
-                    alert("수정 실패: 권한(RLS) 또는 입력값을 확인해주세요.");
-                    return;
-                }
-
-                if (removeImage && oldPath) {
-                    await window.supabaseClient.storage.from("performance").remove([oldPath]);
-                }
-
-                if (!removeImage && newPath && oldPath && oldPath !== newPath) {
-                    await window.supabaseClient.storage.from("performance").remove([oldPath]);
-                }
-
-                alert("수정 완료");
-                closeEdit();
                 await loadList();
-            });
 
-            document.getElementById("cardList").addEventListener("click", async (e) => {
-                const btn = e.target.closest("button[data-action]");
-                if (!btn) return;
+                document.getElementById("btnCancelEdit")
+                    .addEventListener("click", closeEdit);
 
-                const action = btn.dataset.action;
-                const id = Number(btn.dataset.id);
+                document.getElementById("editCategory")
+                    .addEventListener("change", (e) => {
+                        syncEditFieldsUI(e.target.value);
+                    });
 
-                if (action === "edit") {
-                    const { data, error } = await window.supabaseClient
-                        .from("performance_cards")
-                        .select("id, category, title, sort_key, image_url, image_path, fields")
-                        .eq("id", id)
-                        .single();
+                document.getElementById("editImageFile")
+                    .addEventListener("change", (e) => {
 
-                    if (error || !data) {
-                        console.error(error);
-                        alert("수정 데이터를 불러오지 못했습니다.");
-                        return;
-                    }
+                        const file =
+                            e.target.files && e.target.files[0];
 
-                    openEdit(data);
-                    return;
-                }
+                        if (!file) return;
 
-                if (action === "delete") {
-                    await deleteRow(id);
-                }
+                        const url =
+                            URL.createObjectURL(file);
+
+                        const preview =
+                            document.getElementById("editImagePreview");
+
+                        preview.src = url;
+                        preview.style.display = "block";
+                    });
+
+                /* 수정 저장 */
+                document.getElementById("editForm")
+                    .addEventListener("submit", async (e) => {
+
+                        e.preventDefault();
+
+                        const id =
+                            document.getElementById("editId").value;
+
+                        const category =
+                            document.getElementById("editCategory").value;
+
+                        const title =
+                            document.getElementById("editTitle").value.trim();
+
+                        const sortKeyRaw =
+                            document.getElementById("editSortKey").value.trim();
+
+                        const oldPath =
+                            document.getElementById("editOldImagePath").value || "";
+
+                        const removeImage =
+                            document.getElementById("editRemoveImage").checked;
+
+                        if (!id || !title) {
+                            alert("프로젝트명은 필수입니다.");
+                            return;
+                        }
+
+                        let fields = {};
+
+                        if (category === "key") {
+
+                            fields = {
+                                work_date: document.getElementById("k_workDate").value.trim() || null,
+                                client: document.getElementById("k_client").value.trim() || null,
+                                contractor: document.getElementById("k_contractor").value.trim() || null,
+                                scale: document.getElementById("k_scale").value.trim() || null
+                            };
+
+                        } else {
+
+                            fields = {
+                                period: document.getElementById("m_period").value.trim() || null,
+                                capacity: document.getElementById("m_capacity").value.trim() || null,
+                                client: document.getElementById("m_client").value.trim() || null,
+                                tasks: document.getElementById("m_tasks").value.trim() || null
+                            };
+                        }
+
+                        const payload = {
+                            category,
+                            title,
+                            fields
+                        };
+
+                        const sort_key =
+                            Number(sortKeyRaw);
+
+                        if (sortKeyRaw && Number.isFinite(sort_key)) {
+                            payload.sort_key = sort_key;
+                        }
+
+                        if (!sortKeyRaw) {
+                            payload.sort_key = null;
+                        }
+
+                        let newPath = "";
+
+                        if (removeImage) {
+
+                            payload.image_url = null;
+                            payload.image_path = null;
+
+                        } else {
+
+                            const img =
+                                await uploadEditImageIfAny(category);
+
+                            if (img?.image_url) {
+                                payload.image_url = img.image_url;
+                                payload.image_path = img.image_path;
+                                newPath = img.image_path;
+                            }
+                        }
+
+                        try {
+
+                            await updateDoc(
+                                doc(db, "performance_cards", id),
+                                payload
+                            );
+
+                            if (removeImage && oldPath) {
+
+                                try {
+                                    await deleteObject(
+                                        ref(storage, oldPath)
+                                    );
+                                } catch (e) {
+                                    console.warn(e);
+                                }
+                            }
+
+                            if (!removeImage && newPath && oldPath && oldPath !== newPath) {
+
+                                try {
+                                    await deleteObject(
+                                        ref(storage, oldPath)
+                                    );
+                                } catch (e) {
+                                    console.warn(e);
+                                }
+                            }
+
+                            alert("수정 완료");
+
+                            closeEdit();
+
+                            await loadList();
+
+                        } catch (error) {
+
+                            console.error(error);
+
+                            alert("수정 실패: " + error.message);
+                        }
+                    });
+
+                /* 수정/삭제 버튼 */
+                document.getElementById("cardList")
+                    .addEventListener("click", async (e) => {
+
+                        const btn =
+                            e.target.closest("button[data-action]");
+
+                        if (!btn) return;
+
+                        const action =
+                            btn.dataset.action;
+
+                        const id =
+                            btn.dataset.id;
+
+                        if (action === "edit") {
+
+                            try {
+
+                                const snap =
+                                    await getDoc(
+                                        doc(db, "performance_cards", id)
+                                    );
+
+                                if (!snap.exists()) {
+                                    alert("수정 데이터를 찾지 못했습니다.");
+                                    return;
+                                }
+
+                                openEdit({
+                                    id: snap.id,
+                                    ...snap.data()
+                                });
+
+                            } catch (error) {
+
+                                console.error(error);
+
+                                alert("수정 데이터를 불러오지 못했습니다.");
+                            }
+
+                            return;
+                        }
+
+                        if (action === "delete") {
+                            await deleteRow(id);
+                        }
+                    });
             });
         });
     </script>

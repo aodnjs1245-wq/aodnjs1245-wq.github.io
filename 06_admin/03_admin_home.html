@@ -89,25 +89,31 @@
         </section>
     </main>
 
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="/js/01_supabase.js"></script>
+    <script type="module" src="/js/01_firebase.js"></script>
     <script src="/js/00_common.js"></script>
 
-    <script>
+    <script type="module">
         /* =========================
            관리자 홈 보호 + 로그아웃
         ========================= */
-        document.addEventListener("DOMContentLoaded", async () => {
-            const { data: { session } } = await window.supabaseClient.auth.getSession();
-            if (!session) {
-                location.href = "/06_admin/01_admin_login.html";
-                return;
-            }
+        import { auth } from "/js/01_firebase.js";
+        import {
+            onAuthStateChanged,
+            signOut
+        } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-auth.js";
 
-            const btn = document.getElementById("adminLogoutBtn");
-            btn.addEventListener("click", async () => {
-                await window.supabaseClient.auth.signOut();
-                location.href = "/06_admin/01_admin_login.html";
+        document.addEventListener("DOMContentLoaded", () => {
+            onAuthStateChanged(auth, (user) => {
+                if (!user) {
+                    location.href = "/06_admin/01_admin_login.html";
+                    return;
+                }
+
+                const btn = document.getElementById("adminLogoutBtn");
+                btn.addEventListener("click", async () => {
+                    await signOut(auth);
+                    location.href = "/06_admin/01_admin_login.html";
+                });
             });
         });
     </script>

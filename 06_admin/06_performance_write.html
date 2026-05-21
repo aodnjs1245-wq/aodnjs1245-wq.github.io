@@ -57,60 +57,100 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="/js/01_supabase.js"></script>
 
-    <script>
+    <script type="module">
+        /* =========================
+           전체 실적 작성
+        ========================= */
+
+        import { auth, db } from "/js/01_firebase.js";
+
+        import {
+            onAuthStateChanged
+        } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-auth.js";
+
+        import {
+            collection,
+            addDoc,
+            serverTimestamp
+        } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js";
+
         /* =========================
            YYYY.MM -> YYYYMM
         ========================= */
         function toSortKey(workDate) {
             const m = String(workDate || "").match(/^(\d{4})\.(\d{1,2})/);
+
             if (!m) return null;
+
             const y = Number(m[1]);
             const mo = Number(m[2]);
+
             if (!y || !mo) return null;
+
             return y * 100 + mo;
         }
 
-        /* =========================
-           실적 작성
-        ========================= */
-        document.addEventListener("DOMContentLoaded", async () => {
-            const { data: { session } } = await window.supabaseClient.auth.getSession();
-            if (!session) {
-                location.href = "/06_admin/01_admin_login.html";
-                return;
-            }
+        document.addEventListener("DOMContentLoaded", () => {
 
-            const form = document.getElementById("perfWriteForm");
+            onAuthStateChanged(auth, (user) => {
 
-            form.addEventListener("submit", async (e) => {
-                e.preventDefault();
-
-                const work_date = document.getElementById("workDate").value.trim();
-                const work_title = document.getElementById("workTitle").value.trim();
-                const client = document.getElementById("client").value.trim();
-
-                if (!work_date || !work_title || !client) {
-                    alert("공사일자/공사명/발주처를 모두 입력해주세요.");
+                if (!user) {
+                    location.href = "/06_admin/01_admin_login.html";
                     return;
                 }
 
-                const sort_key = toSortKey(work_date);
+                const form = document.getElementById("perfWriteForm");
 
-                const payload = { work_date, work_title, client };
-                if (sort_key) payload.sort_key = sort_key;
+                form.addEventListener("submit", async (e) => {
 
-                const { error } = await window.supabaseClient
-                    .from("performance_all")
-                    .insert([payload]);
+                    e.preventDefault();
 
-                if (error) {
-                    alert("저장 실패: " + error.message);
-                    console.error(error);
-                    return;
-                }
+                    const work_date =
+                        document.getElementById("workDate").value.trim();
 
-                alert("등록 완료");
-                location.href = "/06_admin/05_performance_manage.html";
+                    const work_title =
+                        document.getElementById("workTitle").value.trim();
+
+                    const client =
+                        document.getElementById("client").value.trim();
+
+                    if (!work_date || !work_title || !client) {
+                        alert("공사일자/공사명/발주처를 모두 입력해주세요.");
+                        return;
+                    }
+
+                    const payload = {
+                        work_date,
+                        work_title,
+                        client,
+                        created_at: serverTimestamp()
+                    };
+
+                    const sort_key = toSortKey(work_date);
+
+                    if (sort_key) {
+                        payload.sort_key = sort_key;
+                    }
+
+                    try {
+
+                        await addDoc(
+                            collection(db, "performance_all"),
+                            payload
+                        );
+
+                        alert("등록 완료");
+
+                        location.href =
+                            "/06_admin/05_performance_manage.html";
+
+                    } catch (error) {
+
+                        console.error(error);
+
+                        alert("저장 실패: " + error.message);
+                    }
+                });
             });
         });
     </script>

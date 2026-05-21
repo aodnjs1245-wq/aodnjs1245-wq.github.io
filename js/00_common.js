@@ -6,7 +6,7 @@
 /* =========================
    유틸: 터치/모바일 판별(실기기 오판 방지)
 ========================= */
-function isTouchDevice(){
+function isTouchDevice() {
   const hasTouch =
     ("ontouchstart" in window) ||
     (navigator.maxTouchPoints && navigator.maxTouchPoints > 0);
@@ -84,12 +84,12 @@ function setActiveGnb() {
 ========================= */
 function bindBreadcrumbTouch() {
 
-  function closeAll(){
+  function closeAll() {
     document.querySelectorAll(".breadcrumb-dropdown.is-open")
       .forEach((el) => el.classList.remove("is-open"));
   }
 
-  function openDrop(dropdown){
+  function openDrop(dropdown) {
     document.querySelectorAll(".breadcrumb-dropdown.is-open")
       .forEach((el) => {
         if (el !== dropdown) el.classList.remove("is-open");
@@ -150,16 +150,16 @@ function bindBreadcrumbTouch() {
    GNB: 모바일 1탭=열기 / 2탭=이동 (삼성인터넷/사파리 안정화)
 ========================= */
 function bindGnbTouch() {
-  function isMobileMenuMode(){
+  function isMobileMenuMode() {
     return isTouchDevice();
   }
 
-  function closeAll(){
+  function closeAll() {
     document.querySelectorAll(".gnb-item.is-open")
       .forEach((el) => el.classList.remove("is-open"));
   }
 
-  function openItem(gnbItem){
+  function openItem(gnbItem) {
     document.querySelectorAll(".gnb-item.is-open").forEach((el) => {
       if (el !== gnbItem) el.classList.remove("is-open");
     });

@@ -1,6 +1,17 @@
 /* =========================
    DB 카드 추가 로드(하드코딩 유지)
 ========================= */
+
+import { db } from "/js/01_firebase.js";
+
+import {
+    collection,
+    getDocs,
+    query,
+    where,
+    orderBy
+} from "https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js";
+
 function escapeHtml(str) {
     return String(str ?? "")
         .replaceAll("&", "&amp;")
@@ -22,9 +33,12 @@ function li(label, valueHtml) {
 function renderCard(row) {
     const f = row.fields || {};
     const img = row.image_url ? escapeHtml(row.image_url) : "";
-    const imgTag = img ? `<img src="${img}" alt="실적 이미지" loading="lazy">` : "";
+    const imgTag = img
+        ? `<img src="${img}" alt="실적 이미지" loading="lazy">`
+        : "";
 
     let ul = "";
+
     if (row.category === "key") {
         ul =
             li("공사일자", escapeHtml(f.work_date)) +
@@ -40,39 +54,64 @@ function renderCard(row) {
     }
 
     return `
-    <div class="portfolio-card card">
-      <div class="portfolio-img">${imgTag}</div>
-      <div class="portfolio-info">
-        <h2>${escapeHtml(row.title)}</h2>
-        <ul>${ul}</ul>
-      </div>
-    </div>
-  `;
+        <div class="portfolio-card card">
+            <div class="portfolio-img">${imgTag}</div>
+            <div class="portfolio-info">
+                <h2>${escapeHtml(row.title)}</h2>
+                <ul>${ul}</ul>
+            </div>
+        </div>
+    `;
 }
 
 async function appendDbCards(category) {
     const wrap = document.getElementById("portfolioList");
     if (!wrap) return;
 
-    const { data, error } = await window.supabaseClient
-        .from("performance_cards")
-        .select("id, category, title, image_url, sort_key, fields, created_at")
-        .eq("category", category)
-        .order("sort_key", { ascending: false, nullsFirst: false })
-        .order("created_at", { ascending: false });
+    try {
+        const q = query(
+            collection(db, "performance_cards"),
+            where("category", "==", category),
+            orderBy("created_at", "desc")
+        );
 
-    if (error) {
+        const snap = await getDocs(q);
+
+        if (snap.empty) return;
+
+        const rows = snap.docs.map((d) => ({
+            id: d.id,
+            ...d.data()
+        }));
+
+        rows.sort((a, b) => {
+            const aKey = Number(a.sort_key || 0);
+            const bKey = Number(b.sort_key || 0);
+
+            if (bKey !== aKey) return bKey - aKey;
+
+            const aTime = a.created_at?.toDate
+                ? a.created_at.toDate().getTime()
+                : 0;
+
+            const bTime = b.created_at?.toDate
+                ? b.created_at.toDate().getTime()
+                : 0;
+
+            return bTime - aTime;
+        });
+
+        const html = rows.map(renderCard).join("");
+
+        wrap.insertAdjacentHTML("afterbegin", html);
+    } catch (error) {
         console.error(error);
-        return;
     }
-    if (!data || data.length === 0) return;
-
-    const html = data.map(renderCard).join("");
-    wrap.insertAdjacentHTML("afterbegin", html); // 하드코딩 위에 추가(최신이 위)
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-    const category = document.body.getAttribute("data-perf-category"); // key / maintenance
+    const category = document.body.getAttribute("data-perf-category");
     if (!category) return;
+
     appendDbCards(category);
 });

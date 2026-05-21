@@ -43,28 +43,34 @@
           </div>
 
           <p class="admin-note">
-            관리자 계정은 Supabase Auth에 등록된 계정만 사용할 수 있습니다.
+            관리자 계정은 관리부에서 승인한 계정만 사용할 수 있습니다.
           </p>
         </form>
       </div>
     </section>
   </main>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="/js/01_supabase.js"></script>
+  <script type="module" src="/js/01_firebase.js"></script>
 
-  <script>
+  <script type="module">
     /* =========================
        관리자 로그인
     ========================= */
-    document.addEventListener("DOMContentLoaded", async () => {
-      const { data: { session } } = await window.supabaseClient.auth.getSession();
-      if (session) {
-        location.href = "/06_admin/03_admin_home.html";
-        return;
-      }
+    import { auth } from "/js/01_firebase.js";
+    import {
+      onAuthStateChanged,
+      signInWithEmailAndPassword
+    } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-auth.js";
+
+    document.addEventListener("DOMContentLoaded", () => {
+      onAuthStateChanged(auth, (user) => {
+        if (user) {
+          location.href = "/06_admin/03_admin_home.html";
+        }
+      });
 
       const form = document.getElementById("adminLoginForm");
+
       form.addEventListener("submit", async (e) => {
         e.preventDefault();
 
@@ -76,13 +82,12 @@
           return;
         }
 
-        const { error } = await window.supabaseClient.auth.signInWithPassword({ email, password });
-        if (error) {
+        try {
+          await signInWithEmailAndPassword(auth, email, password);
+          location.href = "/06_admin/03_admin_home.html";
+        } catch (error) {
           alert("로그인 실패: " + error.message);
-          return;
         }
-
-        location.href = "/06_admin/03_admin_home.html";
       });
     });
   </script>

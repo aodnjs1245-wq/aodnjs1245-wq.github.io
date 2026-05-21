@@ -1,29 +1,31 @@
 <!DOCTYPE html>
 <html lang="ko">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>서환산업 | 공지사항</title>
-<!-- 공통 -->
-<link rel="stylesheet" href="/css/01_common.css">
-<!-- 페이지별 -->
-<link rel="stylesheet" href="/css/02_pages.css">
+  <!-- 공통 -->
+  <link rel="stylesheet" href="/css/01_common.css">
+  <!-- 페이지별 -->
+  <link rel="stylesheet" href="/css/02_pages.css">
 </head>
+
 <body>
 
-<!-- ===== 공통 헤더 삽입 영역 ===== -->
-<div id="app-header"></div>
+  <!-- ===== 공통 헤더 삽입 영역 ===== -->
+  <div id="app-header"></div>
 
- 
+
   <main class="subpage">
 
-<!-- ===== 공지사항 상단 비주얼 ===== -->
-<section class="sub-visual sub-visual--company">
-  <div class="sub-visual-inner">
-    <h1 class="sub-visual-title">공지사항</h1>
-    <p class="sub-visual-desc">
-      서환의 새로운 소식과 공지 내용을 안내드립니다.
-    </p>
+    <!-- ===== 공지사항 상단 비주얼 ===== -->
+    <section class="sub-visual sub-visual--company">
+      <div class="sub-visual-inner">
+        <h1 class="sub-visual-title">공지사항</h1>
+        <p class="sub-visual-desc">
+          서환의 새로운 소식과 공지 내용을 안내드립니다.
+        </p>
     </section>
 
     <!-- 검색 영역 -->
@@ -32,11 +34,11 @@
       <button>검색</button>
     </section>
 
-  <!-- 공지 목록 -->
+    <!-- 공지 목록 -->
     <section class="notice-list" id="noticeList"></section>
 
     <!-- 페이지 번호 -->
-    
+
     <!-- #은 페이지 넘기기 누르면 위로 올라가기 때문에 잠시 주석처리
     <div class="pagination">
   <a href="#">«</a>
@@ -44,70 +46,58 @@
   <a href="#">»</a>
     </div>
         -->
-<div class="pagination">
-  <span class="disabled">«</span>
-  <a href="#" class="active">1</a>
-  <span class="disabled">»</span>
-</div>
+    <div class="pagination">
+      <span class="disabled">«</span>
+      <a href="#" class="active">1</a>
+      <span class="disabled">»</span>
+    </div>
 
   </main>
 
-<!-- ===== 공통 푸터 삽입 영역 ===== -->
-<div id="app-footer"></div>
+  <!-- ===== 공통 푸터 삽입 영역 ===== -->
+  <div id="app-footer"></div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="/js/01_supabase.js"></script>
-<script src="/js/00_common.js"></script>
+  <script type="module" src="/js/01_firebase.js"></script>
+  <script src="/js/00_common.js"></script>
+  <script type="module">
+    import { db } from "/js/01_firebase.js";
+    import { collection, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js";
 
-<script>
-/* =========================
-   공지 목록 렌더
-========================= */
-function formatDate(iso){
-  const d = new Date(iso);
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
-}
+    function formatDate(value) {
+      const d = value?.toDate ? value.toDate() : new Date(value);
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    }
 
-document.addEventListener("DOMContentLoaded", async () => {
-  const listEl = document.getElementById("noticeList");
-  if (!listEl) return;
+    document.addEventListener("DOMContentLoaded", async () => {
+      const listEl = document.getElementById("noticeList");
+      if (!listEl) return;
 
-  const { data, error } = await window.supabaseClient
-    .from("notices")
-    .select("id, title, created_at")
-    .order("id", { ascending: false });
+      try {
+        const q = query(collection(db, "notices"), orderBy("created_at", "desc"));
+        const snap = await getDocs(q);
 
-  if (error){
-    console.error(error);
-    listEl.innerHTML = `
-      <div class="notice-item">
-        <div class="notice-title">공지사항을 불러오지 못했습니다.</div>
-      </div>
-    `;
-    return;
-  }
+        if (snap.empty) {
+          listEl.innerHTML = `<div class="notice-item"><div class="notice-title">등록된 공지사항이 없습니다.</div></div>`;
+          return;
+        }
 
-  if (!data || data.length === 0){
-    listEl.innerHTML = `
-      <div class="notice-item">
-        <div class="notice-title">등록된 공지사항이 없습니다.</div>
-      </div>
-    `;
-    return;
-  }
-
-  listEl.innerHTML = data.map(row => `
-    <div class="notice-item">
-      <div class="notice-title">
-        <a href="/05_notice/05_notice_view.html?id=${row.id}">${row.title}</a>
-      </div>
-      <div class="notice-date">${formatDate(row.created_at)}</div>
-    </div>
-  `).join("");
-});
-</script>
+        listEl.innerHTML = snap.docs.map(d => {
+          const row = { id: d.id, ...d.data() };
+          return `
+          <div class="notice-item">
+            <div class="notice-title">
+              <a href="/05_notice/05_notice_view.html?id=${row.id}">${row.title}</a>
+            </div>
+            <div class="notice-date">${formatDate(row.created_at)}</div>
+          </div>
+        `;
+        }).join("");
+      } catch (error) {
+        console.error(error);
+        listEl.innerHTML = `<div class="notice-item"><div class="notice-title">공지사항을 불러오지 못했습니다.</div></div>`;
+      }
+    });
+  </script>
 </body>
+
 </html>

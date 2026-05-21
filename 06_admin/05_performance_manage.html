@@ -89,32 +89,30 @@
         </section>
     </main>
 
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="/js/01_supabase.js"></script>
+    <script type="module" src="/js/01_firebase.js"></script>
 
-    <script>
-
+    <script type="module">
         /* =========================
-   페이지네이션 설정
-========================= */
+           전체 사업실적 관리
+        ========================= */
+        import { auth, db } from "/js/01_firebase.js";
+        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-auth.js";
+        import {
+            collection,
+            query,
+            orderBy,
+            getDocs,
+            doc,
+            getDoc,
+            updateDoc,
+            deleteDoc
+        } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js";
+
         const PER_PAGE = 25;
         let currentPage = 1;
         let totalPages = 1;
-        /* =========================
-           로그인 체크
-        ========================= */
-        async function requireAdmin() {
-            const { data: { session } } = await window.supabaseClient.auth.getSession();
-            if (!session) {
-                location.href = "/06_admin/01_admin_login.html";
-                return false;
-            }
-            return true;
-        }
+        let allRows = [];
 
-        /* =========================
-           XSS 방지(최소)
-        ========================= */
         function escapeHtml(str) {
             return String(str ?? "")
                 .replaceAll("&", "&amp;")
@@ -124,21 +122,17 @@
                 .replaceAll("'", "&#039;");
         }
 
-        /* =========================
-           날짜키(YYYY.MM -> YYYYMM)
-        ========================= */
         function toSortKey(workDate) {
             const m = String(workDate || "").match(/^(\d{4})\.(\d{1,2})/);
             if (!m) return null;
+
             const y = Number(m[1]);
             const mo = Number(m[2]);
             if (!y || !mo) return null;
+
             return y * 100 + mo;
         }
 
-        /* =========================
-           수정 패널 열기/닫기
-        ========================= */
         function openEdit(row) {
             document.getElementById("editPanel").style.display = "block";
             document.getElementById("editId").value = row.id;
@@ -157,58 +151,72 @@
         }
 
         /* =========================
-   목록 로드(25개씩)
-   - 최신이 위로: sort_key DESC, created_at DESC
+   전체 실적 데이터 로드
 ========================= */
+        async function fetchPerformances() {
+            const q = query(
+                collection(db, "performance_all"),
+                orderBy("created_at", "desc")
+            );
+
+            const snap = await getDocs(q);
+
+            allRows = snap.docs.map((d) => ({
+                id: d.id,
+                ...d.data()
+            }));
+
+            allRows.sort((a, b) => {
+                const aKey = Number(a.sort_key || 0);
+                const bKey = Number(b.sort_key || 0);
+
+                if (bKey !== aKey) return bKey - aKey;
+
+                const aTime = a.created_at?.toDate ? a.created_at.toDate().getTime() : 0;
+                const bTime = b.created_at?.toDate ? b.created_at.toDate().getTime() : 0;
+
+                return bTime - aTime;
+            });
+
+            totalPages = Math.max(1, Math.ceil(allRows.length / PER_PAGE));
+        }
+
         async function loadPerformances(page = 1) {
             const tbody = document.getElementById("perfList");
             const pagination = document.getElementById("perfPagination");
 
             currentPage = page;
 
-            const from = (page - 1) * PER_PAGE;
-            const to = from + PER_PAGE - 1;
+            await fetchPerformances();
 
-            const { data, error, count } = await window.supabaseClient
-                .from("performance_all")
-                .select("id, work_date, work_title, client, sort_key, created_at", { count: "exact" })
-                .order("sort_key", { ascending: false })
-                .order("created_at", { ascending: false })
-                .range(from, to);
-
-            if (error) {
-                console.error(error);
-                tbody.innerHTML = `<tr><td colspan="4" style="padding:12px; text-align:center;">목록을 불러오지 못했습니다.</td></tr>`;
-                if (pagination) pagination.innerHTML = "";
-                return;
+            if (currentPage > totalPages) {
+                currentPage = totalPages;
             }
 
-            const totalCount = count ?? 0;
-            totalPages = Math.max(1, Math.ceil(totalCount / PER_PAGE));
-
-            if (!data || data.length === 0) {
+            if (!allRows.length) {
                 tbody.innerHTML = `<tr><td colspan="4" style="padding:12px; text-align:center;">등록된 실적이 없습니다.</td></tr>`;
                 if (pagination) pagination.innerHTML = "";
                 return;
             }
 
-            tbody.innerHTML = data.map(row => `
-    <tr data-id="${row.id}" style="border-bottom:1px solid #e5e7eb;">
-      <td style="padding:12px; text-align:center;">${escapeHtml(row.work_date)}</td>
-      <td style="padding:12px; text-align:left;">${escapeHtml(row.work_title)}</td>
-      <td style="padding:12px; text-align:center;">${escapeHtml(row.client)}</td>
-      <td style="padding:12px; text-align:center;">
-        <button class="admin-btn admin-btn--ghost btnEdit" type="button" style="padding:8px 10px;">수정</button>
-        <button class="admin-btn admin-btn--danger btnDel" type="button" style="padding:8px 10px;">삭제</button>
-      </td>
-    </tr>
-  `).join("");
+            const start = (currentPage - 1) * PER_PAGE;
+            const rows = allRows.slice(start, start + PER_PAGE);
+
+            tbody.innerHTML = rows.map(row => `
+            <tr data-id="${row.id}" style="border-bottom:1px solid #e5e7eb;">
+                <td style="padding:12px; text-align:center;">${escapeHtml(row.work_date)}</td>
+                <td style="padding:12px; text-align:left;">${escapeHtml(row.work_title)}</td>
+                <td style="padding:12px; text-align:center;">${escapeHtml(row.client)}</td>
+                <td style="padding:12px; text-align:center;">
+                    <button class="admin-btn admin-btn--ghost btnEdit" type="button" style="padding:8px 10px;">수정</button>
+                    <button class="admin-btn admin-btn--danger btnDel" type="button" style="padding:8px 10px;">삭제</button>
+                </td>
+            </tr>
+        `).join("");
 
             renderPerfPagination();
         }
-        /* =========================
-           페이지네이션 렌더
-        ========================= */
+
         function renderPerfPagination() {
             const el = document.getElementById("perfPagination");
             if (!el) return;
@@ -238,9 +246,6 @@
             el.innerHTML = html;
         }
 
-        /* =========================
-           페이지네이션 클릭
-        ========================= */
         function bindPerfPagination() {
             const el = document.getElementById("perfPagination");
             if (!el) return;
@@ -248,6 +253,7 @@
             el.addEventListener("click", (e) => {
                 const a = e.target.closest("a");
                 if (!a) return;
+
                 e.preventDefault();
 
                 if (a.classList.contains("disabled")) return;
@@ -259,13 +265,11 @@
                 window.scrollTo({ top: 0, behavior: "smooth" });
             });
         }
-        /* =========================
-           수정 저장
-        ========================= */
+
         async function saveEdit(e) {
             e.preventDefault();
 
-            const id = Number(document.getElementById("editId").value);
+            const id = document.getElementById("editId").value;
             const work_date = document.getElementById("editWorkDate").value.trim();
             const work_title = document.getElementById("editWorkTitle").value.trim();
             const client = document.getElementById("editClient").value.trim();
@@ -275,30 +279,29 @@
                 return;
             }
 
+            const payload = {
+                work_date,
+                work_title,
+                client
+            };
+
             const sort_key = toSortKey(work_date);
-
-            const payload = { work_date, work_title, client };
-            if (sort_key) payload.sort_key = sort_key;
-
-            const { error } = await window.supabaseClient
-                .from("performance_all")
-                .update(payload)
-                .eq("id", id);
-
-            if (error) {
-                console.error(error);
-                alert("수정 실패: 권한(RLS) 또는 입력값을 확인해주세요.");
-                return;
+            if (sort_key) {
+                payload.sort_key = sort_key;
             }
 
-            alert("수정 완료");
-            closeEdit();
-            loadPerformances(currentPage);
+            try {
+                await updateDoc(doc(db, "performance_all", id), payload);
+
+                alert("수정 완료");
+                closeEdit();
+                await loadPerformances(currentPage);
+            } catch (error) {
+                console.error(error);
+                alert("수정 실패: " + error.message);
+            }
         }
 
-        /* =========================
-           목록 이벤트(수정/삭제)
-        ========================= */
         function bindTableActions() {
             const tbody = document.getElementById("perfList");
 
@@ -306,67 +309,63 @@
                 const tr = e.target.closest("tr");
                 if (!tr) return;
 
-                const id = Number(tr.dataset.id);
+                const id = tr.dataset.id;
 
-                /* 수정 */
                 if (e.target.classList.contains("btnEdit")) {
-                    const { data, error } = await window.supabaseClient
-                        .from("performance_all")
-                        .select("id, work_date, work_title, client")
-                        .eq("id", id)
-                        .single();
+                    const snap = await getDoc(doc(db, "performance_all", id));
 
-                    if (error || !data) {
+                    if (!snap.exists()) {
                         alert("수정 데이터를 불러오지 못했습니다.");
-                        console.error(error);
                         return;
                     }
 
-                    openEdit(data);
+                    openEdit({
+                        id: snap.id,
+                        ...snap.data()
+                    });
+
                     return;
                 }
 
-                /* 삭제 */
                 if (e.target.classList.contains("btnDel")) {
                     const ok = confirm("정말 삭제할까요? 삭제하면 되돌릴 수 없습니다.");
                     if (!ok) return;
 
-                    const { error } = await window.supabaseClient
-                        .from("performance_all")
-                        .delete()
-                        .eq("id", id);
+                    try {
+                        await deleteDoc(doc(db, "performance_all", id));
 
-                    if (error) {
+                        alert("삭제 완료");
+                        closeEdit();
+
+                        const nextPage =
+                            currentPage > 1 && allRows.length - 1 <= (currentPage - 1) * PER_PAGE
+                                ? currentPage - 1
+                                : currentPage;
+
+                        await loadPerformances(nextPage);
+                    } catch (error) {
                         console.error(error);
-                        alert("삭제 실패: 권한(RLS)을 확인해주세요.");
-                        return;
+                        alert("삭제 실패: " + error.message);
                     }
-
-                    alert("삭제 완료");
-                    closeEdit();
-
-                    /* 마지막 페이지에서 마지막 항목 삭제 시, 빈 페이지 방지 */
-                    const nextPage =
-                        (currentPage > 1 && currentPage === totalPages) ? currentPage - 1 : currentPage;
-
-                    loadPerformances(nextPage);
                 }
             });
         }
 
-        /* =========================
-           초기 실행
-        ========================= */
-        document.addEventListener("DOMContentLoaded", async () => {
-            const ok = await requireAdmin();
-            if (!ok) return;
+        document.addEventListener("DOMContentLoaded", () => {
+            onAuthStateChanged(auth, async (user) => {
+                if (!user) {
+                    location.href = "/06_admin/01_admin_login.html";
+                    return;
+                }
 
-            document.getElementById("btnCancelEdit").addEventListener("click", closeEdit);
-            document.getElementById("editForm").addEventListener("submit", saveEdit);
+                document.getElementById("btnCancelEdit").addEventListener("click", closeEdit);
+                document.getElementById("editForm").addEventListener("submit", saveEdit);
 
-            bindTableActions();
-            bindPerfPagination();   /* 이거 추가 */
-            loadPerformances(1);
+                bindTableActions();
+                bindPerfPagination();
+
+                await loadPerformances(1);
+            });
         });
     </script>
 </body>

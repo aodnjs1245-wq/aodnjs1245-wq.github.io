@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="/assets/images/00_common/logo_top.svg" type="image/svg+xml">
+    <title>서환산업 | 전체 실적 CSV 일괄 등록</title>
+
+    <link rel="stylesheet" href="/css/01_common.css">
+    <link rel="stylesheet" href="/css/02_pages.css">
+    <link rel="stylesheet" href="/css/03_admin.css">
+</head>
+
+<body>
+    <main class="admin-wrap">
+        <section class="admin-card">
+            <div class="admin-card__head">
+                <h1 class="admin-card__title">전체 실적 CSV 일괄 등록</h1>
+                <p class="admin-card__desc">CSV 데이터를 performance_all 데이터베이스에 한 번에 등록합니다.</p>
+            </div>
+
+            <div class="admin-card__body">
+                <div class="admin-panel">
+                    <h2 class="admin-panel__title">등록 대상</h2>
+                    <p class="admin-panel__text">총 <strong id="rowCount">0</strong>건이 등록됩니다.</p>
+                    <p class="admin-note">이미 등록된 데이터가 있으면 중복으로 들어갈 수 있습니다. 실행 전 꼭 확인해주세요.</p>
+                </div>
+
+                <div class="admin-table-wrap" style="margin-top:14px; max-height:360px; overflow:auto;">
+                    <table class="admin-table">
+                        <thead>
+                            <tr style="background:#1f2a44; color:#fff;">
+                                <th style="padding:12px; text-align:center;">공사일자</th>
+                                <th style="padding:12px; text-align:center;">공사명</th>
+                                <th style="padding:12px; text-align:center;">발주처</th>
+                            </tr>
+                        </thead>
+                        <tbody id="previewBody"></tbody>
+                    </table>
+                </div>
+
+                <div class="admin-actions" style="margin-top:18px;">
+                    <button class="admin-btn admin-btn--primary" type="button" id="btnImport">Firebase에 일괄 등록</button>
+                    <a class="admin-btn admin-btn--ghost" href="/06_admin/05_performance_manage.html">실적 목록</a>
+                    <a class="admin-btn admin-btn--ghost" href="/06_admin/03_admin_home.html">관리자 홈</a>
+                </div>
+
+                <p class="admin-note" id="resultMsg" style="margin-top:12px;"></p>
+            </div>
+        </section>
+    </main>
+
+    <script type="module" src="/js/01_firebase.js"></script>
+
+    <script type="module">
+        /* =========================
+           CSV 일괄 등록
+        ========================= */
+        import { auth, db } from "/js/01_firebase.js";
+        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-auth.js";
+        import { collection, doc, writeBatch, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js";
+
+        /* CSV에서 변환한 데이터 */
+        const rows = [
+            {
+                "work_date": 2024.08,
+                "work_title": "60MW급 태안 햇들원태양광 발전소 사업 공사",
+                "client": "태안햇들원태양광㈜"
+            },
+            {
+                "work_date": 2024.06,
+                "work_title": "이원호 수상태양광 발전설비 수상 안전난간대 설치공사",
+                "client": "㈜에스에너지"
+            },
+            {
+                "work_date": 2024.06,
+                "work_title": "이원호 주민형 수상 태양광 30MW 관련 주변지역 식재공사",
+                "client": "㈜이원신재생에너지복지마을"
+            },
+            {
+                "work_date": 2023.06,
+                "work_title": "공주교대 실과관 증축 및 리모델링공사(전기)",
+                "client": "공주교육대학교"
+            },
+            {
+                "work_date": 2023.05,
+                "work_title": "우성중학교 교실증축 및 공간재구조화 기계설비공사",
+                "client": "충남공주교육지원청"
+            },
+            {
+                "work_date": 2022.12,
+                "work_title": "원북면 마산2리 태양광 발전사업",
+                "client": "마산이화협동조합"
+            },
+            {
+                "work_date": 2022.1,
+                "work_title": "공주 금강철교 경관조명 개선공사",
+                "client": "충청남도 공주시"
+            },
+            {
+                "work_date": 2022.06,
+                "work_title": "태안지역자활센터 리모델링공사(전기)",
+                "client": "태안지역자활센터"
+            },
+            {
+                "work_date": 2022.04,
+                "work_title": "이원호 주민형 수상태양광 30MW 전기 및 전기실공사",
+                "client": "㈜이원신재생에너지복지마을"
+            },
+            {
+                "work_date": 2021.06,
+                "work_title": "이원호 수상태양광 발전설비 수상태양광 공사부지 및 현장사무실 가설공사",
+                "client": "㈜에스에너지"
+            },
+            {
+                "work_date": 2021.06,
+                "work_title": "이원호 수상태양광 발전설비 수상태양광 구조물 및 계류설비 공사",
+                "client": "㈜에스에너지"
+            },
+            {
+                "work_date": 2021.04,
+                "work_title": "태안창기 PV+ESS 발전소 도로연장공사",
+                "client": "서부그린에너지㈜"
+            },
+            {
+                "work_date": 2021.01,
+                "work_title": "부석면 청사 건립공사(전기)",
+                "client": "충청남도 서산시"
+            },
+            {
+                "work_date": 2020.12,
+                "work_title": "태안창기 1~4호기 태양광 발전소 전기실 기초공사, 진입로 포장, 배수펌프장 설치 등",
+                "client": "서부그린에너지㈜"
+            },
+            {
+                "work_date": 2020.11,
+                "work_title": "태안창기 1~4호기 태양광 발전사업 구축공사 배수시설 및 도로공사",
+                "client": "㈜에스에너지"
+            },
+            {
+                "work_date": 2020.1,
+                "work_title": "태안창기 1~4호기 태양광 발전사업 구축공사",
+                "client": "LS일렉트릭 ㈜"
+            },
+            {
+                "work_date": 2020.06,
+                "work_title": "삼양태양광(주) 발전소 건설공사",
+                "client": "삼양태양광㈜"
+            },
+            {
+                "work_date": 2020.02,
+                "work_title": "안면읍 다목적 운동장 가로등 설치공사",
+                "client": "충청남도 태안군"
+            },
+            {
+                "work_date": 2019.04,
+                "work_title": "제1~8호기 석탄설비 안전 시설물 긴급 개선공사",
+                "client": "한국서부발전㈜"
+            },
+            {
+                "work_date": 2018.07,
+                "work_title": "제 1~4호기 석탄설비 Conveyor 회전부 안전시설 교체공사",
+                "client": "한국서부발전㈜"
+            },
+            {
+                "work_date": 2018.06,
+                "work_title": "충남체육고등학교 기숙사 수선 기계설비공사",
+                "client": "충청남도논산\n계룡교육지원청"
+            },
+            {
+                "work_date": 2018.05,
+                "work_title": "화곡저수지 수변공간 보안등 설치공사",
+                "client": "충청남도 서산시"
+            },
+            {
+                "work_date": 2018.02,
+                "work_title": "태안 3,4호기 유기성고형연료 혼소설비 보강공사",
+                "client": "한국서부발전㈜"
+            },
+            {
+                "work_date": 2017.11,
+                "work_title": "탈질설비 설치공사",
+                "client": "한라산업개발㈜"
+            },
+            {
+                "work_date": 2017.08,
+                "work_title": "자연과학대학관 급탕배관 설치공사",
+                "client": "공주대학교"
+            },
+            {
+                "work_date": 2017.06,
+                "work_title": "탈황 복합세정설비 공기압축기용 배관 설치공사",
+                "client": "한국서부발전㈜"
+            },
+            {
+                "work_date": 2015.04,
+                "work_title": "Supervision Service",
+                "client": "대림산업㈜"
+            },
+            {
+                "work_date": 2015.04,
+                "work_title": "그레이팅 고정철물 교체작업",
+                "client": "대림산업㈜"
+            },
+            {
+                "work_date": 2015.02,
+                "work_title": "동두천복합화력발전소 1~2호기 발전설비 경상정비공사",
+                "client": "동두천\n드림파워"
+            },
+            {
+                "work_date": 2013.11,
+                "work_title": "태안 9,10 expansion joint 제작 및 설치",
+                "client": "주식회사 \n에스아이시"
+            },
+            {
+                "work_date": 2013.1,
+                "work_title": "제 7,8호기 환경설비 정비편의시설 설치공사",
+                "client": "한국서부발전㈜\n태안발전본부"
+            },
+            {
+                "work_date": 2013.1,
+                "work_title": "태안화력 9,10호기 기전공사",
+                "client": "에스케이건설㈜"
+            },
+            {
+                "work_date": 2013.09,
+                "work_title": "당진화력 9,10호기 기전공사 중\n회처리설비 설치공사",
+                "client": "경남기업㈜"
+            },
+            {
+                "work_date": 2013.09,
+                "work_title": "통합정제시스템 철골구조물 제작",
+                "client": "한국전력기술㈜"
+            },
+            {
+                "work_date": 2013.07,
+                "work_title": "송암초등학교 다목적강당 증축 기계설비공사",
+                "client": "충청남도\n태안교육청"
+            },
+            {
+                "work_date": 2013.06,
+                "work_title": "태안화력 1부두 하역기(CSU-01A) 설치 및 해체 공사",
+                "client": "현대삼호중공업"
+            },
+            {
+                "work_date": 2013.05,
+                "work_title": "8호기 보일러설비 정비편의시설 설치공사",
+                "client": "한국서부발전㈜\n태안발전본부"
+            },
+            {
+                "work_date": 2013.05,
+                "work_title": "태안 IGCC Test-bed 철골구조물 구축공사",
+                "client": "고등기술연구원"
+            },
+            {
+                "work_date": 2013.04,
+                "work_title": "제 8호기 환경설비 정비편의시설 설치공사",
+                "client": "한국서부발전㈜\n태안발전본부"
+            },
+            {
+                "work_date": 2013.04,
+                "work_title": "태안화력 1부두 하역기 설치 및 잔여작업(PUNCH) 공사",
+                "client": "현대삼호중공업"
+            },
+            {
+                "work_date": 2013.04,
+                "work_title": "소각장 발생 여열의 휴게동 공급공사",
+                "client": "충남 태안군\n환경관리사업소"
+            },
+            {
+                "work_date": 2012.12,
+                "work_title": "태안 IGCC 가스화플랜트 건설공사 (Pipe rack 및 잡철물 설치공사)",
+                "client": "한국서부발전㈜\n태안발전본부"
+            },
+            {
+                "work_date": 2012.11,
+                "work_title": "부여학생수영장 샤워장증축 및 기타설비공사",
+                "client": "충청남도\n부여교육청"
+            },
+            {
+                "work_date": 2012.1,
+                "work_title": "COAL SILO 제작공사",
+                "client": "한국서부발전㈜\n태안발전본부"
+            },
+            {
+                "work_date": 2012.06,
+                "work_title": "제 1~4호기 회이송 배관 교체공사",
+                "client": "한국서부발전㈜\n태안발전본부"
+            },
+            {
+                "work_date": 2012.05,
+                "work_title": "1부두 석탄하역설비 보강공사",
+                "client": "한국서부발전㈜\n태안발전본부"
+            },
+            {
+                "work_date": 2011.11,
+                "work_title": "태안화력 1,3부두 Conveyor Belt 복선화 제작 및 기계설치공사",
+                "client": "한국서부발전㈜\n태안발전본부"
+            },
+            {
+                "work_date": 2011.11,
+                "work_title": "제 5~8호기 석탄취급설비 상하탄기 낙탄방지판 설치공사",
+                "client": "한국서부발전㈜\n태안발전본부"
+            },
+            {
+                "work_date": 2011.11,
+                "work_title": "재활용 처리시설 압축기 보수공사",
+                "client": "태안군\n환경관리사업소"
+            },
+            {
+                "work_date": 2011.1,
+                "work_title": "관2리 제수문 설치공사",
+                "client": "충남태안군"
+            },
+            {
+                "work_date": 2011.1,
+                "work_title": "지방관리 방조제 배수갑문 전동화사업(2차)",
+                "client": "충남태안군"
+            },
+            {
+                "work_date": 2011.08,
+                "work_title": "태안초 강당 증축 기계설비공사",
+                "client": "태안교육지원청"
+            },
+            {
+                "work_date": 2011.08,
+                "work_title": "HHI 군산 80톤 JIB CRANE 설치공사",
+                "client": "현대중공업"
+            },
+            {
+                "work_date": 2011.07,
+                "work_title": "태안종합학습센터 증축 기계설비공사",
+                "client": "태안교육지원청"
+            },
+            {
+                "work_date": 2011.05,
+                "work_title": "영흥화력 1부두 컨베어 원상복구공사",
+                "client": "한국남동발전㈜\n영흥화력본부"
+            },
+            {
+                "work_date": 2011.05,
+                "work_title": "1 & 3 부두 CSU 현장하역 설치 및 해체공사",
+                "client": "한국서부발전㈜\n태안발전본부"
+            },
+            {
+                "work_date": 2011.04,
+                "work_title": "영흥화력 CV-01A/B BELT CONVEYOL 공사",
+                "client": "한국남동발전㈜\n영흥화력본부"
+            },
+            {
+                "work_date": 2011.04,
+                "work_title": "CSU (A,B호기) OVER BEAM 수리공사",
+                "client": "한국남동발전㈜\n영흥화력본부"
+            },
+            {
+                "work_date": 2011.04,
+                "work_title": "영흥화력#3호기 석탄취급설비공사",
+                "client": "한국남동발전㈜\n영흥화력본부"
+            },
+            {
+                "work_date": 2011.03,
+                "work_title": "영흥화력 긴급복구 공사",
+                "client": "한국남동발전㈜\n영흥화력본부"
+            },
+            {
+                "work_date": 2011.03,
+                "work_title": "컨베이어 체인 인양공급",
+                "client": "태안군환경사업소"
+            },
+            {
+                "work_date": 2011.02,
+                "work_title": "음폐수 이송설비 개선공사",
+                "client": "태안군환경사업소"
+            },
+            {
+                "work_date": 2011.01,
+                "work_title": "FAN HOUSE 제작 및 설치공사",
+                "client": "한국서부발전㈜\n태안발전본부"
+            },
+            {
+                "work_date": 2010.12,
+                "work_title": "삼천포화력 ST/RE 1기 공급공사",
+                "client": "한국남동발전㈜\n삼천포화력본부"
+            },
+            {
+                "work_date": 2010.11,
+                "work_title": "온양여자고등학교 기숙사증축 기계설비공사",
+                "client": "충남아산교육청"
+            },
+            {
+                "work_date": 2010.08,
+                "work_title": "홍성여고 기숙사증축 기계설비공사",
+                "client": "충청남도 교육청"
+            },
+            {
+                "work_date": 2010.07,
+                "work_title": "앙카볼트 설치공사",
+                "client": "한국서부발전㈜\n태안발전본부"
+            },
+            {
+                "work_date": 2010.05,
+                "work_title": "SLP TWSP",
+                "client": "한국서부발전㈜\n태안발전본부"
+            },
+            {
+                "work_date": 2010.05,
+                "work_title": "근흥초등학교 관사 개축 기계설비공사",
+                "client": "충청남도\n태안교육청"
+            },
+            {
+                "work_date": 2010.04,
+                "work_title": "군청사 노후배관 및 밸브 교체공사",
+                "client": "충청남도 태안군"
+            },
+            {
+                "work_date": 2010.03,
+                "work_title": "옴폐구 저장탱그 증설공사",
+                "client": "충청남도 태안군"
+            },
+            {
+                "work_date": 2010.03,
+                "work_title": "C.S.U用 FOUNDATION & RAIL 설치공사",
+                "client": "한국서부발전㈜\n태안발전본부"
+            },
+            {
+                "work_date": 2010.02,
+                "work_title": "태안화력 석탄하역설비 설치공사",
+                "client": "한국서부발전㈜\n태안발전본부"
+            },
+            {
+                "work_date": 2009.11,
+                "work_title": "영월복합화력 보조보일러 이설공사",
+                "client": "한국남부발전㈜\n영월복합화력건설처"
+            },
+            {
+                "work_date": 2009.11,
+                "work_title": "화동초등학교 담고적강당 증축 기계설비공사",
+                "client": "충청남도\n태안교육청"
+            },
+            {
+                "work_date": 2009.08,
+                "work_title": "백화초등학교 비가림시설 설치공사",
+                "client": "백화초등학교"
+            },
+            {
+                "work_date": 2009.05,
+                "work_title": "6호기 암모니아 배관공사",
+                "client": "한국서부발전㈜\n태안발전본부"
+            },
+            {
+                "work_date": 2009.04,
+                "work_title": "신관초등학교 교실증축 및 기타 기계설비공사",
+                "client": "충청남도\n공주교육청"
+            },
+            {
+                "work_date": 2009.02,
+                "work_title": "군산복합화력 보조보일러 배관 및 기계설치공사",
+                "client": "한국서부발전㈜\n군산건설처"
+            },
+            {
+                "work_date": 2009.02,
+                "work_title": "방포초등학교 다목적강당 증축 기계설비공사",
+                "client": "충청남도\n태안교육청"
+            },
+            {
+                "work_date": 2009.02,
+                "work_title": "원이중 이원분교 화장실 수선기계설비공사",
+                "client": "충청남도\n태안교육청"
+            },
+            {
+                "work_date": 2008.12,
+                "work_title": "모항초등학교 화장실수선 기계설비공사",
+                "client": "충청남도\n태안교육청"
+            },
+            {
+                "work_date": 2008.11,
+                "work_title": "제3호기 SLP 점검용 철구조불 교체공사",
+                "client": "한전KPS㈜\n태안사업소"
+            },
+            {
+                "work_date": 2008.06,
+                "work_title": "원이중학교 화장실수선 기계설비공사",
+                "client": "충청남도\n태안교육청"
+            },
+            {
+                "work_date": 2008.06,
+                "work_title": "태양광발전 구조물설치",
+                "client": "에너지연구소㈜"
+            },
+            {
+                "work_date": 2008.05,
+                "work_title": "태안화력 7,8호기 건설공사중\n가설사무실 철거공사",
+                "client": "한국서부발전㈜\n태안발전본부"
+            },
+            {
+                "work_date": 2008.04,
+                "work_title": "폐수 저장탱크 외 제작/납품/설치",
+                "client": "한국서부발전㈜\n태안발전본부"
+            },
+            {
+                "work_date": 2008.03,
+                "work_title": "제3호기 탈황설비 정비편의시설 설치공사",
+                "client": "한국서부발전㈜\n태안발전본부"
+            },
+            {
+                "work_date": 2008.03,
+                "work_title": "제6호기 전기집진기 수세정 노즐 외주가공 지원작업",
+                "client": "한국서부발전㈜\n태안발전본부"
+            },
+            {
+                "work_date": 2008.03,
+                "work_title": "태안 태양광발전소 구축사업",
+                "client": "LG CNS㈜"
+            },
+            {
+                "work_date": 2008.02,
+                "work_title": "제 5,6호기 탈황설비 정비편의시설 공사",
+                "client": "한국서부발전㈜\n태안발전본부"
+            },
+            {
+                "work_date": 2008.02,
+                "work_title": "Slurry 배관 1,2호기 \"A\" 및 3,4호기 \"A,C\" 이설공사 ",
+                "client": "한국서부발전㈜\n태안발전본부"
+            },
+            {
+                "work_date": 2007.11,
+                "work_title": "창기중학교 반자시설 창호교체공사",
+                "client": "충남태안교육청"
+            },
+            {
+                "work_date": 2007.11,
+                "work_title": "제 4호기 SLP 부대시설 설치공사",
+                "client": "한전KPS㈜\n태안사업소"
+            },
+            {
+                "work_date": 2007.1,
+                "work_title": "제 5,6호기 Return Water Line 신설공사",
+                "client": "한국서부발전㈜\n태안발전본부"
+            },
+            {
+                "work_date": 2007.08,
+                "work_title": "안기리보건진료소 신축(기계,설비)공사",
+                "client": "태안군보건의료원"
+            },
+            {
+                "work_date": 2007.07,
+                "work_title": "이원초등학교 화장실수선 기계설비공사",
+                "client": "충남태안교육청"
+            },
+            {
+                "work_date": 2007.07,
+                "work_title": "제 1~4호기 회이송배관 종단부 연장공사",
+                "client": "한국서부발전㈜\n태안발전본부"
+            },
+            {
+                "work_date": 2007.04,
+                "work_title": "제 2호기 SLP 부대시설 설치공사",
+                "client": "한전KPS㈜\n태안사업소"
+            },
+            {
+                "work_date": 2006.12,
+                "work_title": "제 1호기 SLP 진동방지 보강설비 및 부대시설공사",
+                "client": "한전기공㈜"
+            },
+            {
+                "work_date": 2006.12,
+                "work_title": "태안화력 7,8선설공사중\n제2회사장 회처리설비 배관설치공사",
+                "client": "두산중공업㈜"
+            },
+            {
+                "work_date": 2006.1,
+                "work_title": "태안 제1회사장 살수설비 공사",
+                "client": "SH엔지니어링㈜"
+            },
+            {
+                "work_date": 2006.07,
+                "work_title": "6호기 FDF 흡입구 Louver 설치공사",
+                "client": "한국서부발전㈜\n태안발전본부"
+            },
+            {
+                "work_date": 2006.05,
+                "work_title": "태안화력5~8호기 회정제설비 공사중 기계제작 설치공사",
+                "client": "한라산업개발㈜"
+            },
+            {
+                "work_date": 2006.05,
+                "work_title": "제 5호기 터빈 Major Valve 정비편의시설 설치공사",
+                "client": "한국서부발전㈜\n태안발전본부"
+            },
+            {
+                "work_date": 2006.05,
+                "work_title": "제 3호기 PC PIPE 점검용발판 설치공사",
+                "client": "한국서부발전㈜\n태안발전본부"
+            },
+            {
+                "work_date": 2006.04,
+                "work_title": "태안화력5~8호기 회정제설비 공사중 SILO 제작 설치공사",
+                "client": "한라산업개발㈜"
+            },
+            {
+                "work_date": 2006.02,
+                "work_title": "태안화력 3호기 PC Pipe 점검용발판 설치공사",
+                "client": "한국서부발전㈜\n태안발전본부"
+            },
+            {
+                "work_date": 2005.12,
+                "work_title": "태안화력 5, 6호기 ST/RE-01C Bucket Wheel Shaft BRG 교체공사",
+                "client": "한국서부발전㈜\n태안발전본부"
+            },
+            {
+                "work_date": 2005.11,
+                "work_title": "태안화력 7, 8호기 공용설비공사중 시운전편의시설 설치공사",
+                "client": "두산중공업㈜"
+            },
+            {
+                "work_date": 2005.09,
+                "work_title": "태안화력 7, 8호기 비탄방지시설공사중 철골 및 유공방진판설치공사",
+                "client": "㈜한화건설"
+            },
+            {
+                "work_date": 2005.08,
+                "work_title": "태안화력 7, 8호기 옥외소화설비 및 오폐수 처리설비 공사중 관로공사",
+                "client": "성창기공㈜"
+            },
+            {
+                "work_date": 2005.06,
+                "work_title": "태안화력 7, 8호기 회처리설비 설치공사중 ASH SILO 제작설치 공사",
+                "client": "한라산업개발㈜"
+            },
+            {
+                "work_date": 2005.06,
+                "work_title": "태안화력 7, 8호기 석탄취급설비 설치공사",
+                "client": "삼성중공업㈜"
+            },
+            {
+                "work_date": 2005.05,
+                "work_title": "태안화력 7, 8호기 소화설비 설치공사(MC-05)",
+                "client": "㈜한화건설"
+            },
+            {
+                "work_date": 2005.04,
+                "work_title": "태안화력 7, 8호기 보안시설설치공사중 울타리 설치공사",
+                "client": "㈜한화건설"
+            },
+            {
+                "work_date": 2005.03,
+                "work_title": "태안화력 7, 8호기 비탄방지시설공사중 ANCHOR FRAME 설치공사",
+                "client": "㈜한화건설"
+            },
+            {
+                "work_date": 2004.11,
+                "work_title": "태안화력 7, 8호기 건축마감공사중 잡철물설치공사(AC-03)",
+                "client": "성창기공㈜"
+            },
+            {
+                "work_date": 2004.1,
+                "work_title": "태안화력 7, 8호기 토목분 잡철물 설치공사",
+                "client": "두산중공업㈜"
+            },
+            {
+                "work_date": 2004.1,
+                "work_title": "태안화력 7, 8호기 기계설비설치공사(MC-01)",
+                "client": "성창기공㈜"
+            },
+            {
+                "work_date": 2004.1,
+                "work_title": "태안화력 7, 8호기 취수관로 축조공사중 취수관로공사(CC-05)",
+                "client": "성창기공㈜"
+            },
+            {
+                "work_date": 2004.1,
+                "work_title": "태안화력 7, 8호기 건축마감공사중 건축설비배관 설치공사(AC-03)",
+                "client": "성창기공㈜"
+            },
+            {
+                "work_date": 2004.08,
+                "work_title": "태안화력 7, 8호기 옥내기기 기초공사중 잡철물제작설치공사",
+                "client": "㈜한화건설"
+            },
+            {
+                "work_date": 2004.07,
+                "work_title": "태안화력 7, 8호기 이원도로연결공사중 회처리배관 이설공사",
+                "client": "두산중공업㈜"
+            },
+            {
+                "work_date": 2004.07,
+                "work_title": "태안화력 7, 8호기 전망대 설치공사",
+                "client": "두산중공업㈜"
+            },
+            {
+                "work_date": 2003.04,
+                "work_title": "당진화력 1~4호기 CV-08 A/B 긴급복구공사",
+                "client": "㈜유창플랜트"
+            },
+            {
+                "work_date": 2003.04,
+                "work_title": "당진화력 1~4호기 CV-08 A/B 정상복구공사",
+                "client": "㈜유창플랜트"
+            },
+            {
+                "work_date": 2003.03,
+                "work_title": "보령화력 2호기 GR FAN 및 부속설비 철거공사",
+                "client": "㈜유창플랜트"
+            },
+            {
+                "work_date": 2002.12,
+                "work_title": "당진화력 5, 6호기 취수관로 및 취수펌프장 축조공사중(기계분야)",
+                "client": "㈜유창플랜트"
+            },
+            {
+                "work_date": 2002.09,
+                "work_title": "당진화력 5, 6호기 터빈,주제어 및 보일러건물 기초공사중 잡철물공사",
+                "client": "㈜유창플랜트"
+            },
+            {
+                "work_date": 2002.03,
+                "work_title": "태안화력 5, 6호기 석고취급설비설치 공사",
+                "client": "㈜유창플랜트"
+            },
+            {
+                "work_date": 2001.05,
+                "work_title": "태안화력 5, 6호기 시운전지원 공사",
+                "client": "㈜유창플랜트"
+            },
+            {
+                "work_date": 1999.06,
+                "work_title": "태안화력 5, 6호기 석탄취급설비 공사",
+                "client": "㈜유창플랜트"
+            }
+        ];
+
+        /* YYYY.MM -> YYYYMM */
+        function toSortKey(workDate) {
+            const m = String(workDate || "").match(/^(\d{4})\.(\d{1,2})/);
+            if (!m) return null;
+
+            const y = Number(m[1]);
+            const mo = Number(m[2]);
+            if (!y || !mo) return null;
+
+            return y * 100 + mo;
+        }
+
+        /* XSS 최소 방지 */
+        function escapeHtml(str) {
+            return String(str ?? "")
+                .replaceAll("&", "&amp;")
+                .replaceAll("<", "&lt;")
+                .replaceAll(">", "&gt;")
+                .replaceAll('"', "&quot;")
+                .replaceAll("'", "&#039;");
+        }
+
+        /* 미리보기 */
+        function renderPreview() {
+            document.getElementById("rowCount").textContent = rows.length;
+
+            document.getElementById("previewBody").innerHTML = rows.map(row => `
+                <tr style="border-bottom:1px solid #e5e7eb;">
+                    <td style="padding:12px; text-align:center;">${escapeHtml(row.work_date)}</td>
+                    <td style="padding:12px; text-align:left;">${escapeHtml(row.work_title)}</td>
+                    <td style="padding:12px; text-align:center;">${escapeHtml(row.client)}</td>
+                </tr>
+            `).join("");
+        }
+
+        /* Firestore 일괄 등록 */
+        async function importRows() {
+            const ok = confirm(`${rows.length}건을 performance_all에 등록할까요? 중복 등록 여부를 먼저 확인해주세요.`);
+            if (!ok) return;
+
+            const btn = document.getElementById("btnImport");
+            const msg = document.getElementById("resultMsg");
+
+            btn.disabled = true;
+            msg.textContent = "등록 중입니다. 창을 닫지 마세요.";
+
+            try {
+                const batch = writeBatch(db);
+
+                rows.forEach(row => {
+                    const ref = doc(collection(db, "performance_all"));
+                    const sortKey = toSortKey(row.work_date);
+
+                    const payload = {
+                        work_date: String(row.work_date || "").trim(),
+                        work_title: String(row.work_title || "").trim(),
+                        client: String(row.client || "").trim(),
+                        created_at: serverTimestamp()
+                    };
+
+                    if (sortKey) payload.sort_key = sortKey;
+
+                    batch.set(ref, payload);
+                });
+
+                await batch.commit();
+
+                alert("일괄 등록 완료");
+                location.href = "/06_admin/05_performance_manage.html";
+            } catch (error) {
+                console.error(error);
+                alert("등록 실패: " + error.message);
+                msg.textContent = "등록에 실패했습니다. 콘솔을 확인해주세요.";
+                btn.disabled = false;
+            }
+        }
+
+        document.addEventListener("DOMContentLoaded", () => {
+            onAuthStateChanged(auth, (user) => {
+                if (!user) {
+                    location.href = "/06_admin/01_admin_login.html";
+                    return;
+                }
+
+                renderPreview();
+                document.getElementById("btnImport").addEventListener("click", importRows);
+            });
+        });
+    </script>
+</body>
+
+</html>
